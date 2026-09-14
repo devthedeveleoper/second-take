@@ -97,7 +97,31 @@ async function setup() {
     await delay(1000);
     await databases.createDatetimeAttribute(DB_ID, collectionId, 'updated_at', false);
   });
+  // 6. Setup Custom Lists Collection
+  await setupCollection('custom_lists', async (collectionId) => {
+    await databases.createStringAttribute(DB_ID, collectionId, 'user_id', 255, true);
+    await delay(1000);
+    await databases.createStringAttribute(DB_ID, collectionId, 'title', 255, true);
+    await delay(1000);
+    await databases.createStringAttribute(DB_ID, collectionId, 'description', 1000, false);
+    await delay(1000);
+    await databases.createBooleanAttribute(DB_ID, collectionId, 'is_public', false, true); // default true
+    await delay(1000);
+    await databases.createDatetimeAttribute(DB_ID, collectionId, 'created_at', false);
+  });
 
+  // 7. Setup List Items Collection
+  await setupCollection('list_items', async (collectionId) => {
+    await databases.createStringAttribute(DB_ID, collectionId, 'list_id', 255, true);
+    await delay(1000);
+    await databases.createIntegerAttribute(DB_ID, collectionId, 'tmdb_id', true);
+    await delay(1000);
+    await databases.createDatetimeAttribute(DB_ID, collectionId, 'added_at', false);
+    await delay(1000);
+    try {
+      await databases.createIndex(DB_ID, collectionId, 'idx_list_movie', 'unique', ['list_id', 'tmdb_id']);
+    } catch (e) { if (e.code !== 409) console.error(e.message); }
+  });
   // 6. Setup Avatars Storage Bucket
   const BUCKET_ID = 'avatars';
   try {

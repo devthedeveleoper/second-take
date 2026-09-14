@@ -7,10 +7,12 @@ import { checkWatchlist } from '@/app/actions/watchlist'
 import LogFilmForm from '@/components/LogFilmForm'
 import DiaryEntryCard from '@/components/DiaryEntryCard'
 import { getMovieDiaryEntries } from '@/app/actions/diary'
+import { getMyLists, getListsContainingMovie } from '@/app/actions/lists'
 import CastCarousel from '@/components/CastCarousel'
 import SeasonCarousel from '@/components/SeasonCarousel'
 import RecommendationsCarousel from '@/components/RecommendationsCarousel'
 import WatchProviders from '@/components/WatchProviders'
+import AddToListModal from '@/components/AddToListModal'
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -46,10 +48,23 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     notFound()
   }
 
-  const director = movie.credits.crew.find((c) => c.job === 'Director')?.name || 'Unknown Director'
+  const director = movie.credits.crew.find((c: any) => c.job === 'Director')?.name || 'Unknown Director'
   const mainCast = movie.credits.cast.slice(0, 15)
-  const isWatchlisted = await checkWatchlist(movie.id)
-  const diaryEntries = await getMovieDiaryEntries(movie.id)
+  
+  const [
+    isWatchlisted,
+    diaryEntries,
+    allListsResult,
+    activeListIdsResult
+  ] = await Promise.all([
+    checkWatchlist(movie.id),
+    getMovieDiaryEntries(movie.id),
+    getMyLists(),
+    getListsContainingMovie(movie.id)
+  ])
+
+  const allLists = allListsResult.success ? allListsResult.data : []
+  const activeListIds = activeListIdsResult.success ? activeListIdsResult.data : []
 
   return (
     <div className="flex flex-col animate-in fade-in duration-500 pb-16">
@@ -146,11 +161,15 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           <h2 className="font-serif text-2xl">Your Cinema</h2>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start">
           <LogFilmForm tmdbId={movie.id} existingEntries={diaryEntries} />
           
+          <div className="w-full sm:w-auto sm:min-w-[140px]">
+            <AddToListModal tmdbId={movie.id} allLists={allLists} activeListIds={activeListIds} />
+          </div>
+
           {!diaryEntries.length && (
-            <div className="w-full sm:w-auto sm:min-w-[200px]">
+            <div className="w-full sm:w-auto sm:min-w-[140px]">
               <WatchlistButton tmdbId={movie.id} initialState={isWatchlisted} />
             </div>
           )}

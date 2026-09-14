@@ -238,17 +238,59 @@ export async function getDiaryStats() {
     // Episodes logged
     const episodes = entries.filter((e: any) => e.episode_number !== null)
 
+    // Ratings Distribution
+    const ratingsMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    entries.forEach((e: any) => {
+      if (e.rating) {
+        ratingsMap[e.rating] = (ratingsMap[e.rating] || 0) + 1
+      }
+    })
+
+    // Monthly Activity (Last 6 Months)
+    const activityMap: Record<string, number> = {}
+    
+    // Initialize last 6 months with 0
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = d.toLocaleString('default', { month: 'short' })
+      activityMap[monthKey] = 0
+    }
+
+    entries.forEach((e: any) => {
+      if (e.watched_at) {
+        const d = new Date(e.watched_at)
+        // Check if within last 6 months
+        const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth())
+        if (diffMonths >= 0 && diffMonths <= 5) {
+          const monthKey = d.toLocaleString('default', { month: 'short' })
+          if (activityMap[monthKey] !== undefined) {
+            activityMap[monthKey] += 1
+          }
+        }
+      }
+    })
+
+    const monthlyActivity = Object.keys(activityMap).map(key => ({
+      month: key,
+      count: activityMap[key]
+    }))
+
     return {
       totalLogs: entries.length,
       uniqueTitles: uniqueTitles.size,
-      episodesWatched: episodes.length
+      episodesWatched: episodes.length,
+      ratingsDistribution: Object.values(ratingsMap), // Array of counts for [1, 2, 3, 4, 5]
+      monthlyActivity
     }
   } catch (error) {
     console.error('Error fetching diary stats:', error)
     return {
       totalLogs: 0,
       uniqueTitles: 0,
-      episodesWatched: 0
+      episodesWatched: 0,
+      ratingsDistribution: [0, 0, 0, 0, 0],
+      monthlyActivity: []
     }
   }
 }

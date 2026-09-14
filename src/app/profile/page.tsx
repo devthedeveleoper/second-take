@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { getProfile } from '@/app/actions/profile'
 import { getDiaryStats } from '@/app/actions/diary'
 import EditProfileForm from '@/components/EditProfileForm'
+import ProfileCharts from '@/components/ProfileCharts'
 
 export default async function ProfilePage() {
   let user = null
@@ -117,6 +118,13 @@ export default async function ProfilePage() {
               <p className="text-sm text-muted-foreground">Episodes Watched</p>
             </div>
           </div>
+
+          {stats.ratingsDistribution && stats.monthlyActivity && (
+            <ProfileCharts 
+              ratingsDistribution={stats.ratingsDistribution} 
+              monthlyActivity={stats.monthlyActivity} 
+            />
+          )}
         </div>
 
       </div>

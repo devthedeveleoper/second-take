@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 import Link from 'next/link'
-import { Camera, Search, BookOpen, Bookmark, User } from 'lucide-react'
+import { Camera, Search, BookOpen, Bookmark, User, List } from 'lucide-react'
 
 export default function RootLayout({
   children,
@@ -39,7 +39,7 @@ export default function RootLayout({
               <span className="font-serif text-lg font-medium hidden sm:inline-block">Second Take</span>
             </Link>
             
-            <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+            <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium text-muted-foreground">
               <Link href="/search" className="hover:text-foreground subtle-transition flex items-center gap-2">
                 <Search className="w-4 h-4" />
                 <span className="hidden sm:inline">Search</span>
@@ -47,6 +47,10 @@ export default function RootLayout({
               <Link href="/diary" className="hover:text-foreground subtle-transition flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Diary</span>
+              </Link>
+              <Link href="/lists" className="hover:text-foreground subtle-transition flex items-center gap-2">
+                <List className="w-4 h-4" />
+                <span className="hidden sm:inline">Lists</span>
               </Link>
               <Link href="/watchlist" className="hover:text-foreground subtle-transition flex items-center gap-2">
                 <Bookmark className="w-4 h-4" />
