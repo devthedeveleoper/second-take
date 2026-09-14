@@ -1,0 +1,254 @@
+'use server'
+
+import { createSessionClient, createAdminClient } from '@/utils/appwrite/server'
+import { getMovieDetails } from '@/utils/tmdb'
+import { ID, Query, Permission, Role } from 'node-appwrite'
+import { revalidatePath } from 'next/cache'
+
+const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
+
+async function ensureMovieInCache(tables: any, tmdbId: number) {
+  try {
+    const existing = await tables.listRows(DB_ID, 'cached_movies', [Query.equal('tmdb_id', tmdbId)])
+    if (existing.total > 0) return
+  } catch (err) {}
+
+  const movie = await getMovieDetails(tmdbId)
+  
+  try {
+    await tables.createRow(DB_ID, 'cached_movies', ID.unique(), {
+      tmdb_id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_year: movie.release_date ? movie.release_date.split('-')[0] : null
+    }, [
+      Permission.read(Role.users())
+    ])
+  } catch (err: any) {
+    if (err.code !== 409) console.error('Error caching movie:', err)
+  }
+}
+
+export async function logFilm(formData: FormData) {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    const user = await account.get()
+
+    const tmdbId = parseInt(formData.get('tmdbId') as string)
+    const seasonNumber = formData.get('seasonNumber') ? parseInt(formData.get('seasonNumber') as string) : null
+    const episodeNumber = formData.get('episodeNumber') ? parseInt(formData.get('episodeNumber') as string) : null
+    const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null
+    const thought = formData.get('thought') as string
+    const watchedAtStr = formData.get('watchedAt') as string
+    
+    let watchedAt = new Date().toISOString()
+    if (watchedAtStr) {
+      watchedAt = new Date(watchedAtStr).toISOString()
+    }
+    
+    const isRewatch = formData.get('isRewatch') === 'on'
+
+    await ensureMovieInCache(tables, tmdbId)
+
+    const documentData: any = {
+      user_id: user.$id,
+      tmdb_id: tmdbId,
+      watched_at: watchedAt,
+      rating: rating,
+      thought: thought,
+      is_rewatch: isRewatch,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    if (seasonNumber !== null) documentData.season_number = seasonNumber
+    if (episodeNumber !== null) documentData.episode_number = episodeNumber
+
+    await tables.createRow(DB_ID, 'diary_entries', ID.unique(), documentData, [
+      Permission.read(Role.user(user.$id)),
+      Permission.update(Role.user(user.$id)),
+      Permission.delete(Role.user(user.$id))
+    ])
+
+    try {
+      const wResult = await tables.listRows(DB_ID, 'watchlist', [
+        Query.equal('user_id', user.$id),
+        Query.equal('tmdb_id', tmdbId)
+      ])
+      if (wResult.total > 0) {
+        await tables.deleteRow(DB_ID, 'watchlist', wResult.rows[0].$id)
+      }
+    } catch (e) {}
+
+    revalidatePath(`/title/${tmdbId}`)
+    if (seasonNumber !== null) {
+      revalidatePath(`/title/${tmdbId}/season/${seasonNumber}`)
+    }
+    revalidatePath('/diary')
+    revalidatePath('/watchlist')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Log film error:', error)
+    return { error: error.message || 'Failed to log film.' }
+  }
+}
+
+export async function getMovieDiaryEntries(tmdbId: number, seasonNumber?: number, episodeNumber?: number) {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    const user = await account.get()
+
+    const queries = [
+      Query.equal('user_id', user.$id),
+      Query.equal('tmdb_id', tmdbId),
+      Query.orderDesc('watched_at')
+    ]
+
+    if (seasonNumber !== undefined) {
+      queries.push(Query.equal('season_number', seasonNumber))
+    } else {
+      queries.push(Query.isNull('season_number'))
+    }
+
+    if (episodeNumber !== undefined) {
+      queries.push(Query.equal('episode_number', episodeNumber))
+    } else {
+      queries.push(Query.isNull('episode_number'))
+    }
+
+    const result = await tables.listRows(DB_ID, 'diary_entries', queries)
+    
+    // Convert to plain objects to pass safely to Client Components
+    return JSON.parse(JSON.stringify(result.rows))
+  } catch (error) {
+    return []
+  }
+}
+
+export async function getSeasonDiaryEntries(tmdbId: number, seasonNumber: number) {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    const user = await account.get()
+
+    const result = await tables.listRows(DB_ID, 'diary_entries', [
+      Query.equal('user_id', user.$id),
+      Query.equal('tmdb_id', tmdbId),
+      Query.equal('season_number', seasonNumber),
+      Query.isNotNull('episode_number')
+    ])
+    
+    return JSON.parse(JSON.stringify(result.rows))
+  } catch (error) {
+    return []
+  }
+}
+
+export async function updateDiaryEntry(entryId: string, formData: FormData) {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    const user = await account.get()
+
+    // Validate ownership
+    const entryResult = await tables.listRows(DB_ID, 'diary_entries', [
+      Query.equal('$id', entryId)
+    ])
+    if (entryResult.total === 0) throw new Error('Entry not found')
+    const entry = entryResult.rows[0]
+    if (entry.user_id !== user.$id) throw new Error('Unauthorized')
+
+    const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null
+    const thought = formData.get('thought') as string
+    const watchedAtStr = formData.get('watchedAt') as string
+    const tmdbId = parseInt(formData.get('tmdbId') as string)
+    
+    let watchedAt = entry.watched_at
+    if (watchedAtStr) {
+      watchedAt = new Date(watchedAtStr).toISOString()
+    }
+    
+    const isRewatch = formData.get('isRewatch') === 'on'
+
+    await tables.updateRow(DB_ID, 'diary_entries', entryId, {
+      watched_at: watchedAt,
+      rating: rating,
+      thought: thought,
+      is_rewatch: isRewatch,
+      updated_at: new Date().toISOString()
+    })
+
+    revalidatePath(`/title/${tmdbId}`)
+    revalidatePath('/diary')
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Update film error:', error)
+    return { error: error.message || 'Failed to update diary entry.' }
+  }
+}
+
+export async function deleteDiaryEntry(entryId: string, tmdbId: number) {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    const user = await account.get()
+
+    // Validate ownership
+    const entryResult = await tables.listRows(DB_ID, 'diary_entries', [
+      Query.equal('$id', entryId)
+    ])
+    if (entryResult.total === 0) throw new Error('Entry not found')
+    const entry = entryResult.rows[0]
+    if (entry.user_id !== user.$id) throw new Error('Unauthorized')
+
+    await tables.deleteRow(DB_ID, 'diary_entries', entryId)
+
+    revalidatePath(`/title/${tmdbId}`)
+    if (entry.season_number) {
+      revalidatePath(`/title/${tmdbId}/season/${entry.season_number}`)
+    }
+    revalidatePath('/diary')
+    revalidatePath('/')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Delete film error:', error)
+    return { error: error.message || 'Failed to delete diary entry.' }
+  }
+}
+
+export async function getDiaryStats() {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    const user = await account.get()
+
+    const result = await tables.listRows(DB_ID, 'diary_entries', [
+      Query.equal('user_id', user.$id),
+      Query.limit(10000) // Up to 10k items for stats
+    ])
+
+    const entries = result.rows
+    
+    // Total movies/shows
+    const uniqueTitles = new Set(entries.map((e: any) => e.tmdb_id))
+    
+    // Episodes logged
+    const episodes = entries.filter((e: any) => e.episode_number !== null)
+
+    return {
+      totalLogs: entries.length,
+      uniqueTitles: uniqueTitles.size,
+      episodesWatched: episodes.length
+    }
+  } catch (error) {
+    console.error('Error fetching diary stats:', error)
+    return {
+      totalLogs: 0,
+      uniqueTitles: 0,
+      episodesWatched: 0
+    }
+  }
+}
