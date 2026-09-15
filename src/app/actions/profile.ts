@@ -79,3 +79,65 @@ export async function updateProfile(formData: FormData) {
     return { success: false, error: error.message }
   }
 }
+
+export async function getPublicProfile(username: string) {
+  try {
+    const { tables } = await createAdminClient()
+    
+    // Look up the profile by username
+    const result = await tables.listRows(DB_ID, COLLECTION, [
+      Query.equal('username', username)
+    ])
+
+    if (result.total === 0) {
+      return { success: false, data: null }
+    }
+
+    const profile = result.rows[0]
+
+    // Fetch their diary stats manually since getDiaryStats relies on session
+    const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
+      Query.equal('user_id', profile.user_id),
+      Query.limit(5000)
+    ])
+
+    const entries = diaryResult.rows
+    const uniqueTitles = new Set(entries.map((e: any) => e.tmdb_id))
+    const episodes = entries.filter((e: any) => e.episode_number !== null)
+
+    const stats = {
+      totalLogs: entries.length,
+      uniqueTitles: uniqueTitles.size,
+      episodesWatched: episodes.length
+    }
+
+    // Hydrate recent logs with TMDB info
+    const recentLogsRaw = entries.slice(0, 10)
+    const recentLogs = await Promise.all(
+      recentLogsRaw.map(async (entry: any) => {
+        try {
+          const { getMovieDetails } = await import('@/utils/tmdb')
+          const tmdbData = await getMovieDetails(entry.tmdb_id)
+          return {
+            ...entry,
+            movie: tmdbData
+          }
+        } catch (e) {
+          return entry
+        }
+      })
+    )
+
+    return { 
+      success: true, 
+      data: {
+        profile: JSON.parse(JSON.stringify(profile)),
+        stats,
+        recentLogs: JSON.parse(JSON.stringify(recentLogs))
+      }
+    }
+  } catch (error: any) {
+    console.error('Error fetching public profile:', error)
+    return { success: false, data: null }
+  }
+}

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getMyLists } from '@/app/actions/lists'
 import Link from 'next/link'
 import { Plus, List as ListIcon } from 'lucide-react'

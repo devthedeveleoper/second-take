@@ -122,7 +122,24 @@ async function setup() {
       await databases.createIndex(DB_ID, collectionId, 'idx_list_movie', 'unique', ['list_id', 'tmdb_id']);
     } catch (e) { if (e.code !== 409) console.error(e.message); }
   });
-  // 6. Setup Avatars Storage Bucket
+  // 8. Setup Follows Collection
+  await setupCollection('follows', async (collectionId) => {
+    await databases.createStringAttribute(DB_ID, collectionId, 'follower_id', 255, true);
+    await delay(1000);
+    await databases.createStringAttribute(DB_ID, collectionId, 'following_id', 255, true);
+    await delay(1000);
+    await databases.createDatetimeAttribute(DB_ID, collectionId, 'created_at', false);
+    await delay(1000);
+    try {
+      await databases.createIndex(DB_ID, collectionId, 'idx_follow', 'unique', ['follower_id', 'following_id']);
+      await delay(1000);
+      await databases.createIndex(DB_ID, collectionId, 'idx_follower', 'key', ['follower_id']);
+      await delay(1000);
+      await databases.createIndex(DB_ID, collectionId, 'idx_following', 'key', ['following_id']);
+    } catch (e) { if (e.code !== 409) console.error(e.message); }
+  });
+
+  // 9. Setup Avatars Storage Bucket
   const BUCKET_ID = 'avatars';
   try {
     await storage.createBucket(

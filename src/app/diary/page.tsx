@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createSessionClient, createAdminClient } from '@/utils/appwrite/server'
 import { Query } from 'node-appwrite'
 import { getImageUrl } from '@/utils/tmdb'
