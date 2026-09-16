@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { getMyLists } from '@/app/actions/lists'
 import Link from 'next/link'
 import { Plus, List as ListIcon } from 'lucide-react'
-import CreateListButton from '@/components/CreateListButton' // we'll build this
+import CreateListButton from '@/components/CreateListButton'
 
 export default async function ListsPage() {
   const result = await getMyLists()

@@ -40,7 +40,6 @@ export async function updateProfile(formData: FormData) {
     const avatarFile = formData.get('avatar_file') as File | null
     
     if (avatarFile && avatarFile.size > 0) {
-      // Create a native file to bypass node-appwrite input quirks if any, though Next.js File usually works.
       const uploadedFile = await storage.createFile('avatars', ID.unique(), avatarFile)
       
       const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1'
@@ -59,16 +58,13 @@ export async function updateProfile(formData: FormData) {
       avatar_url: avatar_url
     }
 
-    // Check if profile exists
     const existing = await tables.listRows(DB_ID, COLLECTION, [
       Query.equal('user_id', user.$id)
     ])
 
     if (existing.total > 0) {
-      // Update
       await tables.updateRow(DB_ID, COLLECTION, existing.rows[0].$id, profileData)
     } else {
-      // Create
       await tables.createRow(DB_ID, COLLECTION, ID.unique(), profileData)
     }
 
@@ -84,7 +80,6 @@ export async function getPublicProfile(username: string) {
   try {
     const { tables } = await createAdminClient()
     
-    // Look up the profile by username
     const result = await tables.listRows(DB_ID, COLLECTION, [
       Query.equal('username', username)
     ])
@@ -95,7 +90,6 @@ export async function getPublicProfile(username: string) {
 
     const profile = result.rows[0]
 
-    // Fetch their diary stats manually since getDiaryStats relies on session
     const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
       Query.equal('user_id', profile.user_id),
       Query.limit(5000)
@@ -111,7 +105,6 @@ export async function getPublicProfile(username: string) {
       episodesWatched: episodes.length
     }
 
-    // Hydrate recent logs with TMDB info
     const recentLogsRaw = entries.slice(0, 10)
     const recentLogs = await Promise.all(
       recentLogsRaw.map(async (entry: any) => {

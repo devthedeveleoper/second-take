@@ -65,7 +65,9 @@ export async function logFilm(formData: FormData) {
     if (seasonNumber !== null) documentData.season_number = seasonNumber
     if (episodeNumber !== null) documentData.episode_number = episodeNumber
 
-    await tables.createRow(DB_ID, 'diary_entries', ID.unique(), documentData, [
+    const collectionName = episodeNumber !== null ? 'episode_entries' : 'diary_entries'
+
+    await tables.createRow(DB_ID, collectionName, ID.unique(), documentData, [
       Permission.read(Role.user(user.$id)),
       Permission.update(Role.user(user.$id)),
       Permission.delete(Role.user(user.$id))
@@ -118,9 +120,9 @@ export async function getMovieDiaryEntries(tmdbId: number, seasonNumber?: number
       queries.push(Query.isNull('episode_number'))
     }
 
-    const result = await tables.listRows(DB_ID, 'diary_entries', queries)
+    const collectionName = episodeNumber !== undefined ? 'episode_entries' : 'diary_entries'
+    const result = await tables.listRows(DB_ID, collectionName, queries)
     
-    // Convert to plain objects to pass safely to Client Components
     return JSON.parse(JSON.stringify(result.rows))
   } catch (error) {
     return []
@@ -133,7 +135,7 @@ export async function getSeasonDiaryEntries(tmdbId: number, seasonNumber: number
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    const result = await tables.listRows(DB_ID, 'diary_entries', [
+    const result = await tables.listRows(DB_ID, 'episode_entries', [
       Query.equal('user_id', user.$id),
       Query.equal('tmdb_id', tmdbId),
       Query.equal('season_number', seasonNumber),
@@ -146,14 +148,14 @@ export async function getSeasonDiaryEntries(tmdbId: number, seasonNumber: number
   }
 }
 
-export async function updateDiaryEntry(entryId: string, formData: FormData) {
+export async function updateDiaryEntry(entryId: string, formData: FormData, isEpisode: boolean = false) {
   try {
     const { account } = await createSessionClient()
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    // Validate ownership
-    const entryResult = await tables.listRows(DB_ID, 'diary_entries', [
+    const collectionName = isEpisode ? 'episode_entries' : 'diary_entries'
+    const entryResult = await tables.listRows(DB_ID, collectionName, [
       Query.equal('$id', entryId)
     ])
     if (entryResult.total === 0) throw new Error('Entry not found')
@@ -172,7 +174,7 @@ export async function updateDiaryEntry(entryId: string, formData: FormData) {
     
     const isRewatch = formData.get('isRewatch') === 'on'
 
-    await tables.updateRow(DB_ID, 'diary_entries', entryId, {
+    await tables.updateRow(DB_ID, collectionName, entryId, {
       watched_at: watchedAt,
       rating: rating,
       thought: thought,
@@ -190,21 +192,21 @@ export async function updateDiaryEntry(entryId: string, formData: FormData) {
   }
 }
 
-export async function deleteDiaryEntry(entryId: string, tmdbId: number) {
+export async function deleteDiaryEntry(entryId: string, tmdbId: number, isEpisode: boolean = false) {
   try {
     const { account } = await createSessionClient()
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    // Validate ownership
-    const entryResult = await tables.listRows(DB_ID, 'diary_entries', [
+    const collectionName = isEpisode ? 'episode_entries' : 'diary_entries'
+    const entryResult = await tables.listRows(DB_ID, collectionName, [
       Query.equal('$id', entryId)
     ])
     if (entryResult.total === 0) throw new Error('Entry not found')
     const entry = entryResult.rows[0]
     if (entry.user_id !== user.$id) throw new Error('Unauthorized')
 
-    await tables.deleteRow(DB_ID, 'diary_entries', entryId)
+    await tables.deleteRow(DB_ID, collectionName, entryId)
 
     revalidatePath(`/title/${tmdbId}`)
     if (entry.season_number) {
@@ -225,20 +227,22 @@ export async function getDiaryStats() {
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    const result = await tables.listRows(DB_ID, 'diary_entries', [
+    const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
       Query.equal('user_id', user.$id),
-      Query.limit(10000) // Up to 10k items for stats
+      Query.limit(5000)
     ])
 
-    const entries = result.rows
+    const episodeResult = await tables.listRows(DB_ID, 'episode_entries', [
+      Query.equal('user_id', user.$id),
+      Query.limit(5000)
+    ])
+
+    const entries = [...diaryResult.rows, ...episodeResult.rows]
     
-    // Total movies/shows
     const uniqueTitles = new Set(entries.map((e: any) => e.tmdb_id))
     
-    // Episodes logged
     const episodes = entries.filter((e: any) => e.episode_number !== null)
 
-    // Ratings Distribution
     const ratingsMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
     entries.forEach((e: any) => {
       if (e.rating) {
@@ -246,10 +250,8 @@ export async function getDiaryStats() {
       }
     })
 
-    // Monthly Activity (Last 6 Months)
     const activityMap: Record<string, number> = {}
     
-    // Initialize last 6 months with 0
     const now = new Date()
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
@@ -260,7 +262,6 @@ export async function getDiaryStats() {
     entries.forEach((e: any) => {
       if (e.watched_at) {
         const d = new Date(e.watched_at)
-        // Check if within last 6 months
         const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth())
         if (diffMonths >= 0 && diffMonths <= 5) {
           const monthKey = d.toLocaleString('default', { month: 'short' })
@@ -280,7 +281,7 @@ export async function getDiaryStats() {
       totalLogs: entries.length,
       uniqueTitles: uniqueTitles.size,
       episodesWatched: episodes.length,
-      ratingsDistribution: Object.values(ratingsMap), // Array of counts for [1, 2, 3, 4, 5]
+      ratingsDistribution: Object.values(ratingsMap),
       monthlyActivity
     }
   } catch (error) {

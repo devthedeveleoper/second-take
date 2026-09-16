@@ -24,7 +24,6 @@ export default async function EpisodePage({ params }: { params: Promise<{ id: st
 
   if (!episode) notFound()
 
-  // Fetch diary entries specifically for this episode
   const diaryEntries = await getMovieDiaryEntries(parseInt(id), parseInt(season_number), parseInt(episode_number))
 
   return (

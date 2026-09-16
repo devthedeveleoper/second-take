@@ -53,7 +53,6 @@ async function fetchFromTMDB<T>(endpoint: string, params: Record<string, string>
     throw new Error('TMDB_API_KEY is not set')
   }
 
-  // Construct the original TMDB URL
   const targetUrl = new URL(`https://api.themoviedb.org/3${endpoint}`)
   targetUrl.searchParams.append('api_key', API_KEY)
   
@@ -62,7 +61,7 @@ async function fetchFromTMDB<T>(endpoint: string, params: Record<string, string>
   })
 
   const response = await fetch(targetUrl.toString(), {
-    next: { revalidate: 86400 } // Cache for 24 hours by default
+    next: { revalidate: 86400 }
   })
 
   if (!response.ok) {
@@ -95,11 +94,10 @@ export async function searchMovies(query: string, page: number = 1): Promise<{ r
     page: page.toString()
   })
   
-  // Filter out people, and map TV shows to look like movies for the UI
   const results = data.results
     .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
     .map(item => ({
-      id: encodeTmdbId(item.id, item.media_type), // Encode the ID so our database treats it uniquely
+      id: encodeTmdbId(item.id, item.media_type),
       title: item.title || item.name,
       original_title: item.original_title || item.original_name,
       overview: item.overview,
@@ -121,7 +119,7 @@ export async function getMovieDetails(encodedId: number): Promise<TMDBMovieDetai
   })
   
   return {
-    id: encodedId, // Keep it encoded for the app's components
+    id: encodedId,
     title: data.title || data.name,
     original_title: data.original_title || data.original_name,
     overview: data.overview,

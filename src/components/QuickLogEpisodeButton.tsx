@@ -19,15 +19,13 @@ export default function QuickLogEpisodeButton({
   const isWatched = existingEntries.length > 0
 
   const handleToggle = (e: React.MouseEvent) => {
-    e.preventDefault() // Prevent navigation since this button is inside a Link
+    e.preventDefault()
     
     startTransition(async () => {
       if (isWatched) {
-        // Find the most recent entry for this episode and delete it
         const entry = existingEntries[0]
         await deleteDiaryEntry(entry.$id, tmdbId)
       } else {
-        // Quick log with no rating/thoughts
         const formData = new FormData()
         formData.set('tmdbId', tmdbId.toString())
         formData.set('seasonNumber', seasonNumber.toString())

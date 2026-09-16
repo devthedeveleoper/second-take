@@ -16,7 +16,6 @@ async function ensureMovieInCache(tables: any, tmdbId: number) {
   const movie = await getMovieDetails(tmdbId)
   
   try {
-    // cached_movies can be read by anyone, so we give 'users' read access, or just let the admin client handle it.
     await tables.createRow(DB_ID, 'cached_movies', ID.unique(), {
       tmdb_id: movie.id,
       title: movie.title,

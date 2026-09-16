@@ -17,7 +17,6 @@ export default function LogFilmForm({ tmdbId, existingEntries, seasonNumber, epi
     setErrorMsg('')
     const formData = new FormData(e.currentTarget)
     
-    // Ensure rating is injected if set visually
     if (rating > 0) {
       formData.set('rating', rating.toString())
     }
@@ -29,12 +28,10 @@ export default function LogFilmForm({ tmdbId, existingEntries, seasonNumber, epi
       } else {
         setIsOpen(false)
         setRating(0)
-        // Revalidation happens on server, page will reflect new entry
       }
     })
   }
 
-  // Calculate today's date formatted for HTML date input
   const today = new Date().toISOString().split('T')[0]
   const hasLogged = existingEntries.length > 0
   const isEpisode = seasonNumber !== undefined && episodeNumber !== undefined

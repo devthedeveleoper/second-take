@@ -6,12 +6,12 @@ interface MonthlyActivity {
 }
 
 interface ProfileChartsProps {
-  ratingsDistribution: number[] // [1-star, 2-star, 3-star, 4-star, 5-star]
+  ratingsDistribution: number[]
   monthlyActivity: MonthlyActivity[]
 }
 
 export default function ProfileCharts({ ratingsDistribution, monthlyActivity }: ProfileChartsProps) {
-  const maxRatingCount = Math.max(...ratingsDistribution, 1) // Prevent division by zero
+  const maxRatingCount = Math.max(...ratingsDistribution, 1)
   const maxActivityCount = Math.max(...monthlyActivity.map(m => m.count), 1)
 
   return (

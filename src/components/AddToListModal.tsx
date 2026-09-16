@@ -20,7 +20,6 @@ export default function AddToListModal({ tmdbId, allLists, activeListIds: initia
 
     const isAdding = !activeIds.has(listId)
     
-    // Optimistic update
     const newActive = new Set(activeIds)
     if (isAdding) newActive.add(listId)
     else newActive.delete(listId)
@@ -37,7 +36,6 @@ export default function AddToListModal({ tmdbId, allLists, activeListIds: initia
         await removeFromList(listId, tmdbId)
       }
     } catch (e) {
-      // Revert on error
       setActiveIds(activeIds)
     } finally {
       const finalLoading = new Set(loadingIds)

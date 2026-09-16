@@ -23,7 +23,6 @@ export default async function SeasonPage({ params }: { params: Promise<{ id: str
 
   if (!season) notFound()
 
-  // Fetch all diary entries for this season
   const seasonDiaryEntries = await getSeasonDiaryEntries(parseInt(id), parseInt(season_number))
 
   return (

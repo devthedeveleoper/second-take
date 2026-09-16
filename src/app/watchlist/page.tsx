@@ -18,7 +18,6 @@ export default async function WatchlistPage() {
     const { tables } = await createAdminClient()
     user = await account.get()
     
-    // Fetch user's watchlist
     const watchlistResult = await tables.listRows(DB_ID, 'watchlist', [
       Query.equal('user_id', user.$id),
       Query.orderDesc('created_at')
@@ -27,14 +26,10 @@ export default async function WatchlistPage() {
     if (watchlistResult.total > 0) {
       const tmdbIds = watchlistResult.rows.map((row: any) => row.tmdb_id)
       
-      // Fetch movie details from cached_movies
       const cachedResult = await tables.listRows(DB_ID, 'cached_movies', [
-        // Appwrite supports equal with multiple values (IN clause equivalent in some versions)
-        // For standard appwrite it's Query.equal('tmdb_id', tmdbIds)
         Query.equal('tmdb_id', tmdbIds)
       ])
       
-      // Map them together
       watchlistItems = watchlistResult.rows.map((item: any) => {
         const movieData = cachedResult.rows.find((m: any) => m.tmdb_id === item.tmdb_id)
         return {

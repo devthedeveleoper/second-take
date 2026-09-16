@@ -22,7 +22,6 @@ export default function InfiniteSearchGrid({ query, initialResults, initialTotal
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Reset state if query changes (though typically the RSC unmounts/remounts this component via a key)
     setResults(initialResults)
     setPage(1)
     setTotalPages(initialTotalPages)
@@ -35,7 +34,7 @@ export default function InfiniteSearchGrid({ query, initialResults, initialTotal
           loadMore()
         }
       },
-      { rootMargin: '400px' } // Trigger 400px before reaching the bottom
+      { rootMargin: '400px' }
     )
 
     if (loadMoreRef.current) {
@@ -66,7 +65,7 @@ export default function InfiniteSearchGrid({ query, initialResults, initialTotal
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
         {results.map((movie, index) => (
           <Link 
-            key={`${movie.id}-${index}`} // Using index to prevent duplicate key errors from TMDB
+            key={`${movie.id}-${index}`}
             href={`/title/${movie.id}`}
             className="flex flex-col gap-2 group cursor-pointer animate-in fade-in zoom-in-95 duration-500 fill-mode-both"
             style={{ animationDelay: `${(index % 20) * 20}ms` }}

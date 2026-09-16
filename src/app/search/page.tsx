@@ -57,7 +57,7 @@ export default async function SearchPage({
 
       {results.length > 0 && (
         <InfiniteSearchGrid 
-          key={q} // Remount component entirely when query changes
+          key={q}
           query={q} 
           initialResults={results} 
           initialTotalPages={totalPages} 

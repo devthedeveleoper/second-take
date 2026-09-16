@@ -31,7 +31,6 @@ export default function FollowButton({ followingId, initialStatus, isSelf }: Fol
     setIsLoading(true)
     const newStatus = !isFollowing
     
-    // Optimistic UI
     setIsFollowing(newStatus)
     
     try {
@@ -41,7 +40,6 @@ export default function FollowButton({ followingId, initialStatus, isSelf }: Fol
         await unfollowUser(followingId)
       }
     } catch (error) {
-      // Revert on failure
       setIsFollowing(!newStatus)
       alert("Failed to follow/unfollow user.")
     } finally {

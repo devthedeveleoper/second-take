@@ -8,7 +8,7 @@ export default function WatchlistRemoveButton({ tmdbId }: { tmdbId: number }) {
   const [isPending, startTransition] = useTransition()
 
   const handleRemove = (e: React.MouseEvent) => {
-    e.preventDefault() // prevent navigating to movie page
+    e.preventDefault()
     startTransition(async () => {
       const res = await removeFromWatchlist(tmdbId)
       if (res.error) alert(res.error)

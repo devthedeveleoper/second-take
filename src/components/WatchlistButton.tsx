@@ -10,7 +10,6 @@ export default function WatchlistButton({ tmdbId, initialState }: { tmdbId: numb
 
   const handleToggle = () => {
     startTransition(async () => {
-      // Optimistic update
       setInWatchlist(!inWatchlist)
       
       let res
@@ -20,7 +19,6 @@ export default function WatchlistButton({ tmdbId, initialState }: { tmdbId: numb
         res = await addToWatchlist(tmdbId)
       }
       
-      // If error, revert
       if (res.error) {
         setInWatchlist(inWatchlist)
         alert(res.error)

@@ -5,7 +5,6 @@ import { getImageUrl, TMDBWatchProviders } from '@/utils/tmdb'
 export default function WatchProviders({ providers }: { providers: Record<string, TMDBWatchProviders> | undefined }) {
   if (!providers) return null
 
-  // Prefer IN, then just pick the first available
   const region = providers['IN'] || Object.values(providers)[0]
 
   if (!region) return null

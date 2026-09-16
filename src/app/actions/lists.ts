@@ -51,16 +51,13 @@ export async function getListDetails(listId: string) {
   try {
     const { tables } = await createAdminClient()
 
-    // 1. Get the list metadata
     const list = await tables.getRow(DB_ID, 'custom_lists', listId)
     
-    // 2. Get the items in the list
     const itemsResult = await tables.listRows(DB_ID, 'list_items', [
       Query.equal('list_id', listId),
       Query.orderDesc('added_at')
     ])
 
-    // 3. Fetch TMDB details for each item (could be optimized with a cached DB, but this works for now)
     const movies = await Promise.all(
       itemsResult.rows.map(async (row: any) => {
         try {
@@ -94,7 +91,6 @@ export async function addToList(listId: string, tmdbId: number) {
     const { account } = await createSessionClient()
     const { tables } = await createAdminClient()
     
-    // Auth check
     await account.get()
 
     await tables.createRow(DB_ID, 'list_items', ID.unique(), {
@@ -107,7 +103,6 @@ export async function addToList(listId: string, tmdbId: number) {
     revalidatePath(`/lists/${listId}`)
     return { success: true }
   } catch (error: any) {
-    // 409 means it's already in the list (thanks to unique index)
     if (error.code === 409) return { success: true }
     console.error('Error adding to list:', error)
     return { success: false, error: error.message }
@@ -145,10 +140,8 @@ export async function deleteList(listId: string) {
     const { tables } = await createAdminClient()
     await account.get()
 
-    // Delete the list itself
     await tables.deleteRow(DB_ID, 'custom_lists', listId)
 
-    // Delete all items in the list
     let offset = 0
     let hasMore = true
     while (hasMore) {
@@ -180,7 +173,6 @@ export async function getListsContainingMovie(tmdbId: number) {
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    // Get all user lists
     const userLists = await tables.listRows(DB_ID, 'custom_lists', [
       Query.equal('user_id', user.$id)
     ])
@@ -189,7 +181,6 @@ export async function getListsContainingMovie(tmdbId: number) {
 
     const listIds = userLists.rows.map(l => l.$id)
 
-    // Check which of those lists contain the movie
     const items = await tables.listRows(DB_ID, 'list_items', [
       Query.equal('tmdb_id', tmdbId),
       Query.limit(100)

@@ -18,7 +18,6 @@ export default async function LoginPage({
     const { account } = await createSessionClient()
     user = await account.get()
   } catch (error) {
-    // No session
   }
 
   if (user) {
@@ -60,10 +59,8 @@ export default async function LoginPage({
     try {
       const { account } = await createAdminClient()
       
-      // 1. Create the user account
       await account.create(ID.unique(), email, password)
       
-      // 2. Create the session
       const session = await account.createEmailPasswordSession(email, password)
 
       const cookieStore = await cookies()

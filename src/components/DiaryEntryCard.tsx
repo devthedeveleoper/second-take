@@ -23,7 +23,8 @@ export default function DiaryEntryCard({ entry, tmdbId }: { entry: any, tmdbId: 
     }
 
     startTransition(async () => {
-      const res = await updateDiaryEntry(entry.$id, formData)
+      const isEpisode = entry.episode_number != null
+      const res = await updateDiaryEntry(entry.$id, formData, isEpisode)
       if (res.error) {
         setErrorMsg(res.error)
       } else {
@@ -36,14 +37,14 @@ export default function DiaryEntryCard({ entry, tmdbId }: { entry: any, tmdbId: 
     if (!confirm('Are you sure you want to delete this diary entry?')) return
     
     startTransition(async () => {
-      const res = await deleteDiaryEntry(entry.$id, tmdbId)
+      const isEpisode = entry.episode_number != null
+      const res = await deleteDiaryEntry(entry.$id, tmdbId, isEpisode)
       if (res.error) {
         alert(res.error)
       }
     })
   }
 
-  // Edit Mode
   if (isEditing) {
     const defaultDate = entry.watched_at ? new Date(entry.watched_at).toISOString().split('T')[0] : ''
     const today = new Date().toISOString().split('T')[0]
@@ -137,7 +138,6 @@ export default function DiaryEntryCard({ entry, tmdbId }: { entry: any, tmdbId: 
     )
   }
 
-  // View Mode
   return (
     <div className={`p-4 border border-border rounded-lg bg-surface relative group ${isPending ? 'opacity-50' : ''}`}>
       <div className="flex justify-between items-start mb-2">

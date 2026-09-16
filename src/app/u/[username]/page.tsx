@@ -30,7 +30,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       isFollowing = followRes.success ? followRes.data : false
     }
   } catch (e) {
-    // User is not logged in, default states are false
   }
 
   const displayName = profile.username

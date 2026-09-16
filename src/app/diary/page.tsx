@@ -18,7 +18,6 @@ export default async function DiaryPage() {
     const { tables } = await createAdminClient()
     user = await account.get()
     
-    // Fetch user's diary
     const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
       Query.equal('user_id', user.$id),
       Query.orderDesc('watched_at')
@@ -27,12 +26,10 @@ export default async function DiaryPage() {
     if (diaryResult.total > 0) {
       const tmdbIds = diaryResult.rows.map((row: any) => row.tmdb_id)
       
-      // Fetch movie details from cached_movies
       const cachedResult = await tables.listRows(DB_ID, 'cached_movies', [
         Query.equal('tmdb_id', tmdbIds)
       ])
       
-      // Map them together
       diaryEntries = diaryResult.rows.map((entry: any) => {
         const movieData = cachedResult.rows.find((m: any) => m.tmdb_id === entry.tmdb_id)
         return {
@@ -51,7 +48,6 @@ export default async function DiaryPage() {
     }
   }
 
-  // Group entries by month/year for a chronological feed feel
   const groupedEntries: { [key: string]: any[] } = {}
   
   diaryEntries.forEach(entry => {

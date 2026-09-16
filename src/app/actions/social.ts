@@ -61,7 +61,6 @@ export async function checkFollowStatus(followingId: string) {
     const { account } = await createSessionClient()
     const { tables } = await createAdminClient()
     
-    // Auth check
     const user = await account.get()
 
     if (user.$id === followingId) return { success: true, data: false }
@@ -77,14 +76,12 @@ export async function checkFollowStatus(followingId: string) {
   }
 }
 
-// Get timeline feed of people the user follows
 export async function getFeed(page = 1, limit = 20) {
   try {
     const { account } = await createSessionClient()
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    // 1. Get all users I am following
     const follows = await tables.listRows(DB_ID, 'follows', [
       Query.equal('follower_id', user.$id),
       Query.limit(500)
@@ -96,10 +93,6 @@ export async function getFeed(page = 1, limit = 20) {
 
     const followingIds = follows.rows.map((f: any) => f.following_id)
 
-    // 2. Get their most recent diary entries
-    // Note: Appwrite doesn't support 'IN' queries with more than 100 items usually, 
-    // but we can query using multiple queries or chunk it.
-    // For simplicity, we chunk up to 100 following IDs.
     const chunks = []
     for (let i = 0; i < followingIds.length; i += 100) {
       chunks.push(followingIds.slice(i, i + 100))
@@ -107,7 +100,6 @@ export async function getFeed(page = 1, limit = 20) {
 
     let allEntries: any[] = []
     
-    // Fetch logs from following chunk (simplifying to just taking the first 100 for this prototype)
     const activeChunk = chunks[0] || []
     
     if (activeChunk.length > 0) {
@@ -120,7 +112,6 @@ export async function getFeed(page = 1, limit = 20) {
       allEntries = logs.rows
     }
 
-    // 3. Hydrate with profiles and TMDB data
     if (allEntries.length > 0) {
       const uids = Array.from(new Set(allEntries.map(e => e.user_id)))
       const profiles = await tables.listRows(DB_ID, 'profiles', [

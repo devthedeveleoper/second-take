@@ -97,6 +97,30 @@ async function setup() {
     await delay(1000);
     await databases.createDatetimeAttribute(DB_ID, collectionId, 'updated_at', false);
   });
+  
+  // 5.5 Setup Episode Entries Collection
+  await setupCollection('episode_entries', async (collectionId) => {
+    await databases.createStringAttribute(DB_ID, collectionId, 'user_id', 255, true);
+    await delay(1000);
+    await databases.createIntegerAttribute(DB_ID, collectionId, 'tmdb_id', true);
+    await delay(1000);
+    await databases.createDatetimeAttribute(DB_ID, collectionId, 'watched_at', true);
+    await delay(1000);
+    await databases.createIntegerAttribute(DB_ID, collectionId, 'rating', false);
+    await delay(1000);
+    await databases.createStringAttribute(DB_ID, collectionId, 'thought', 5000, false);
+    await delay(1000);
+    await databases.createBooleanAttribute(DB_ID, collectionId, 'is_rewatch', false);
+    await delay(1000);
+    await databases.createIntegerAttribute(DB_ID, collectionId, 'season_number', false);
+    await delay(1000);
+    await databases.createIntegerAttribute(DB_ID, collectionId, 'episode_number', false);
+    await delay(1000);
+    await databases.createDatetimeAttribute(DB_ID, collectionId, 'created_at', false);
+    await delay(1000);
+    await databases.createDatetimeAttribute(DB_ID, collectionId, 'updated_at', false);
+  });
+
   // 6. Setup Custom Lists Collection
   await setupCollection('custom_lists', async (collectionId) => {
     await databases.createStringAttribute(DB_ID, collectionId, 'user_id', 255, true);
