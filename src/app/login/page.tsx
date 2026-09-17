@@ -42,7 +42,6 @@ export default async function LoginPage({
         expires: new Date(session.expire),
       })
 
-      // Ensure profile exists
       try {
         const { databases } = await createAdminClient()
         const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
@@ -91,7 +90,6 @@ export default async function LoginPage({
         expires: new Date(session.expire),
       })
 
-      // Ensure profile exists
       try {
         const { databases } = await createAdminClient()
         const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!

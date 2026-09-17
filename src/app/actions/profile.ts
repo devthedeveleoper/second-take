@@ -3,6 +3,7 @@
 import { createSessionClient, createAdminClient } from '@/utils/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 import { revalidatePath } from 'next/cache'
+import { hydrateMovies } from '@/utils/appwrite/hydration'
 
 const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
 const COLLECTION = 'profiles'
@@ -92,9 +93,14 @@ export async function getPublicProfile(username: string) {
       Query.limit(5000)
     ])
 
-    const entries = diaryResult.rows
-    const uniqueTitles = new Set(entries.map((e: any) => e.movie ? e.movie.tmdb_id : e.tmdb_id))
-    const episodes = entries.filter((e: any) => e.episode_number !== null)
+    const episodeResult = await tables.listRows(DB_ID, 'episode_entries', [
+      Query.equal('profile', profile.$id),
+      Query.limit(5000)
+    ])
+
+    const entries = [...diaryResult.rows, ...episodeResult.rows]
+    const uniqueTitles = new Set(entries.map((e: any) => typeof e.movie === 'string' ? e.movie : (e.movie ? e.movie.tmdb_id : e.tmdb_id)))
+    const episodes = entries.filter((e: any) => e.episode_number !== undefined && e.episode_number !== null)
 
     const stats = {
       totalLogs: entries.length,
@@ -102,11 +108,11 @@ export async function getPublicProfile(username: string) {
       episodesWatched: episodes.length
     }
 
-    const recentLogsRaw = entries.slice(0, 10)
-    const recentLogs = recentLogsRaw.map((entry: any) => ({
-      ...entry,
-      movie: entry.movie // The movie is automatically populated by Appwrite relationships!
-    }))
+    const sortedDiary = [...diaryResult.rows].sort((a, b) => 
+      new Date(b.watched_at).getTime() - new Date(a.watched_at).getTime()
+    )
+    const recentLogsRaw = sortedDiary.slice(0, 10)
+    const recentLogs = await hydrateMovies(recentLogsRaw)
 
     return { 
       success: true, 

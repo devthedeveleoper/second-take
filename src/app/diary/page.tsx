@@ -6,6 +6,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Star } from 'lucide-react'
 
+import { hydrateMovies } from '@/utils/appwrite/hydration'
+
 export default async function DiaryPage() {
   const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
   
@@ -24,10 +26,7 @@ export default async function DiaryPage() {
     ])
     
     if (diaryResult.total > 0) {
-      diaryEntries = diaryResult.rows.map((entry: any) => ({
-        ...entry,
-        movie: entry.movie || { title: 'Unknown Movie', poster_path: null, release_year: '' }
-      }))
+      diaryEntries = await hydrateMovies(diaryResult.rows)
     }
     
   } catch (err: any) {
@@ -79,9 +78,9 @@ export default async function DiaryPage() {
               <div className="flex flex-col gap-8">
                 {entries.map((entry) => (
                   <div key={entry.$id} className="flex flex-col md:flex-row gap-6 p-4 md:p-6 bg-surface border border-border rounded-xl shadow-sm">
-                    {/* Poster */}
+
                     <Link 
-                      href={entry.season_number && entry.episode_number ? `/title/${entry.tmdb_id}/season/${entry.season_number}/episode/${entry.episode_number}` : `/title/${entry.tmdb_id}`} 
+                      href={entry.season_number && entry.episode_number ? `/title/${entry.movie.$id}/season/${entry.season_number}/episode/${entry.episode_number}` : `/title/${entry.movie.$id}`} 
                       className="shrink-0 group"
                     >
                       <div className="w-24 md:w-32 aspect-[2/3] relative rounded-md overflow-hidden bg-surface-hover border border-border">
@@ -101,12 +100,11 @@ export default async function DiaryPage() {
                       </div>
                     </Link>
 
-                    {/* Entry Details */}
                     <div className="flex-1 flex flex-col gap-3">
                       <div className="flex flex-col gap-1">
                         <div className="flex justify-between items-start gap-4">
                           <Link 
-                            href={entry.season_number && entry.episode_number ? `/title/${entry.tmdb_id}/season/${entry.season_number}/episode/${entry.episode_number}` : `/title/${entry.tmdb_id}`} 
+                            href={entry.season_number && entry.episode_number ? `/title/${entry.movie.$id}/season/${entry.season_number}/episode/${entry.episode_number}` : `/title/${entry.movie.$id}`} 
                             className="hover:text-accent subtle-transition"
                           >
                             <h3 className="font-serif text-xl md:text-2xl font-medium leading-tight">
@@ -123,8 +121,7 @@ export default async function DiaryPage() {
                               )}
                             </h3>
                           </Link>
-                          
-                          {/* Rating */}
+
                           {entry.rating && (
                             <div className="flex gap-0.5 shrink-0">
                               {[...Array(entry.rating)].map((_, i) => (

@@ -8,6 +8,9 @@ import { getDiaryStats } from '@/app/actions/diary'
 import EditProfileForm from '@/components/EditProfileForm'
 import ProfileCharts from '@/components/ProfileCharts'
 
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 export default async function ProfilePage() {
   let user = null
   
@@ -40,8 +43,7 @@ export default async function ProfilePage() {
   
   return (
     <div className="flex flex-col gap-12 py-8 animate-in fade-in duration-500 max-w-4xl mx-auto w-full px-4 md:px-0">
-      
-      {/* Header Profile Section */}
+
       <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
         <div className="w-32 h-32 rounded-full bg-surface border border-border flex items-center justify-center shrink-0 overflow-hidden relative shadow-lg">
           {profile?.avatar_url ? (
@@ -80,8 +82,7 @@ export default async function ProfilePage() {
       <hr className="border-border" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        
-        {/* Left Col: Settings */}
+
         <div className="md:col-span-1 flex flex-col gap-6">
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
             <h3 className="font-serif text-xl mb-4">Account</h3>
@@ -95,7 +96,6 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Right Col: Stats */}
         <div className="md:col-span-2 flex flex-col gap-6">
           <h2 className="text-2xl font-serif">Your Lifetime Cinema</h2>
           

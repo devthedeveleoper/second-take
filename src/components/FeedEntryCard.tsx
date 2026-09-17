@@ -10,8 +10,7 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-4 border border-border rounded-xl bg-surface hover:bg-surface-hover subtle-transition animate-in fade-in zoom-in-95 duration-200">
-      
-      {/* Poster */}
+
       <Link href={`/title/${movie.id}`} className="shrink-0 relative w-24 md:w-32 aspect-[2/3] rounded-md overflow-hidden bg-background">
         {movie.poster_path ? (
           <Image
@@ -29,8 +28,7 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
       </Link>
 
       <div className="flex flex-col gap-2 flex-1 pt-1">
-        
-        {/* Header: User and Date */}
+
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <Link href={`/u/${profile.username}`} className="flex items-center gap-2 hover:text-foreground subtle-transition group">
             <div className="w-5 h-5 rounded-full overflow-hidden relative bg-background border border-border">
@@ -57,7 +55,6 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
           </div>
         </div>
 
-        {/* Title and Rating */}
         <div className="flex flex-col gap-0.5 mt-1">
           <Link href={`/title/${movie.id}`}>
             <h3 className="font-serif text-lg font-medium hover:text-accent subtle-transition leading-tight">
@@ -74,7 +71,6 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
           )}
         </div>
 
-        {/* Thought */}
         {entry.thought && (
           <p className="text-sm text-foreground/90 font-serif leading-relaxed mt-2 whitespace-pre-wrap line-clamp-4">
             "{entry.thought}"

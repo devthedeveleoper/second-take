@@ -20,7 +20,7 @@ export default function RecommendationsCarousel({ recommendations }: { recommend
 
   return (
     <div className="relative group">
-      {/* Left Gradient Fade & Button */}
+
       <div className="absolute left-0 top-0 bottom-6 w-16 bg-gradient-to-r from-background to-transparent z-10 flex items-center justify-start opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         <button 
           onClick={() => scroll('left')}
@@ -65,7 +65,6 @@ export default function RecommendationsCarousel({ recommendations }: { recommend
         ))}
       </div>
 
-      {/* Right Gradient Fade & Button */}
       <div className="absolute right-0 top-0 bottom-6 w-16 bg-gradient-to-l from-background to-transparent z-10 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         <button 
           onClick={() => scroll('right')}

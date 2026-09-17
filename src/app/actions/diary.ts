@@ -83,6 +83,8 @@ export async function logFilm(formData: FormData) {
     }
     revalidatePath('/diary')
     revalidatePath('/watchlist')
+    revalidatePath('/profile')
+    revalidatePath('/')
     return { success: true }
   } catch (error: any) {
     console.error('Log film error:', error)
@@ -104,20 +106,28 @@ export async function getMovieDiaryEntries(tmdbId: number, seasonNumber?: number
 
     if (seasonNumber !== undefined) {
       queries.push(Query.equal('season_number', seasonNumber))
-    } else {
-      queries.push(Query.isNull('season_number'))
     }
-
     if (episodeNumber !== undefined) {
       queries.push(Query.equal('episode_number', episodeNumber))
-    } else {
-      queries.push(Query.isNull('episode_number'))
     }
 
-    const collectionName = episodeNumber !== undefined ? 'episode_entries' : 'diary_entries'
-    const result = await tables.listRows(DB_ID, collectionName, queries)
-    
-    return JSON.parse(JSON.stringify(result.rows))
+    if (seasonNumber === undefined && episodeNumber === undefined) {
+      // Main title page: fetch both diary and episodes
+      const [diaryResult, episodeResult] = await Promise.all([
+        tables.listRows(DB_ID, 'diary_entries', queries),
+        tables.listRows(DB_ID, 'episode_entries', queries)
+      ])
+      
+      const combined = [...diaryResult.rows, ...episodeResult.rows].sort((a, b) => 
+        new Date(b.watched_at).getTime() - new Date(a.watched_at).getTime()
+      )
+      return JSON.parse(JSON.stringify(combined))
+    } else {
+      // Specific season or episode page
+      const collectionName = episodeNumber !== undefined ? 'episode_entries' : 'diary_entries'
+      const result = await tables.listRows(DB_ID, collectionName, queries)
+      return JSON.parse(JSON.stringify(result.rows))
+    }
   } catch (error) {
     return []
   }
@@ -201,6 +211,7 @@ export async function deleteDiaryEntry(entryId: string, tmdbId: number, isEpisod
       revalidatePath(`/title/${tmdbId}/season/${entry.season_number}`)
     }
     revalidatePath('/diary')
+    revalidatePath('/profile')
     revalidatePath('/')
     return { success: true }
   } catch (error: any) {
@@ -226,6 +237,7 @@ export async function getDiaryStats() {
     ])
 
     const entries = [...diaryResult.rows, ...episodeResult.rows]
+    console.log('GET DIARY STATS - ENTRIES COUNT:', entries.length);
     
     const uniqueTitles = new Set(entries.map((e: any) => e.movie ? e.movie.tmdb_id : e.tmdb_id))
     
@@ -273,7 +285,7 @@ export async function getDiaryStats() {
       monthlyActivity
     }
   } catch (error) {
-    console.error('Error fetching diary stats:', error)
+    console.error('Error fetching diary stats (debug):', error)
     return {
       totalLogs: 0,
       uniqueTitles: 0,

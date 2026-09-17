@@ -81,8 +81,7 @@ export default function LogFilmForm({ tmdbId, existingEntries, seasonNumber, epi
         <input type="hidden" name="tmdbId" value={tmdbId} />
         {seasonNumber !== undefined && <input type="hidden" name="seasonNumber" value={seasonNumber} />}
         {episodeNumber !== undefined && <input type="hidden" name="episodeNumber" value={episodeNumber} />}
-        
-        {/* Date & Rewatch */}
+
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2 border border-border rounded-md px-3 py-2 bg-surface flex-1 min-w-[200px]">
             <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -101,7 +100,6 @@ export default function LogFilmForm({ tmdbId, existingEntries, seasonNumber, epi
           </label>
         </div>
 
-        {/* Rating */}
         <div className="flex flex-col gap-1">
           <label className="text-sm text-muted-foreground">Rating</label>
           <div className="flex gap-1">
@@ -126,7 +124,6 @@ export default function LogFilmForm({ tmdbId, existingEntries, seasonNumber, epi
           </div>
         </div>
 
-        {/* Thought / Review */}
         <div className="flex flex-col gap-1">
           <label className="text-sm text-muted-foreground">Thoughts (optional)</label>
           <textarea 

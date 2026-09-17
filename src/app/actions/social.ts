@@ -3,6 +3,7 @@
 import { createSessionClient, createAdminClient } from '@/utils/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 import { revalidatePath } from 'next/cache'
+import { hydrateMovies, hydrateProfiles } from '@/utils/appwrite/hydration'
 
 const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
 
@@ -109,7 +110,8 @@ export async function getFeed(page = 1, limit = 20) {
         Query.limit(limit),
         Query.offset((page - 1) * limit)
       ])
-      allEntries = logs.rows
+      const hydratedMovies = await hydrateMovies(logs.rows)
+      allEntries = await hydrateProfiles(hydratedMovies)
     }
 
     return { success: true, data: JSON.parse(JSON.stringify(allEntries)) }

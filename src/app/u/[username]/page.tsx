@@ -37,8 +37,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex flex-col gap-12 py-8 animate-in fade-in duration-500 max-w-4xl mx-auto w-full px-4 md:px-0">
-      
-      {/* Header Profile Section */}
+
       <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
         <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
           <div className="w-32 h-32 rounded-full bg-surface border border-border flex items-center justify-center shrink-0 overflow-hidden relative shadow-lg">
@@ -77,7 +76,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
       <hr className="border-border" />
 
-      {/* Stats Section */}
       <div className="flex flex-col gap-6">
         <h2 className="text-2xl font-serif">Lifetime Cinema</h2>
         
@@ -102,7 +100,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* Recent Logs */}
       <div className="flex flex-col gap-6">
         <h2 className="text-2xl font-serif border-b border-border pb-4">Recent Logs</h2>
         
@@ -113,7 +110,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         ) : (
           <div className="flex flex-col gap-4">
             {recentLogs.map((entry: any) => (
-              <DiaryEntryCard key={entry.$id} entry={entry} tmdbId={entry.tmdb_id} />
+              <DiaryEntryCard key={entry.$id} entry={entry} tmdbId={entry.movie.$id} />
             ))}
           </div>
         )}

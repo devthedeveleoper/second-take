@@ -4,6 +4,7 @@ import { createSessionClient, createAdminClient } from '@/utils/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 import { revalidatePath } from 'next/cache'
 import { getMovieDetails } from '@/utils/tmdb'
+import { hydrateMovies } from '@/utils/appwrite/hydration'
 
 const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
 
@@ -58,7 +59,9 @@ export async function getListDetails(listId: string) {
       Query.orderDesc('added_at')
     ])
 
-    const movies = itemsResult.rows.map((row: any) => {
+    const hydratedItems = await hydrateMovies(itemsResult.rows)
+
+    const movies = hydratedItems.map((row: any) => {
       if (!row.movie) return null
       return {
         ...row.movie,

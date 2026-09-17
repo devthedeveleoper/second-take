@@ -142,11 +142,16 @@ export default function DiaryEntryCard({ entry, tmdbId }: { entry: any, tmdbId: 
     <div className={`p-4 border border-border rounded-lg bg-surface relative group ${isPending ? 'opacity-50' : ''}`}>
       <div className="flex justify-between items-start mb-2">
         <div className="flex flex-col">
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium flex items-center gap-2">
             {new Date(entry.watched_at).toLocaleDateString(undefined, {
               year: 'numeric', month: 'long', day: 'numeric'
             })}
-            {entry.is_rewatch && <span className="text-muted-foreground ml-2 text-xs border border-border rounded-full px-2 py-0.5">Rewatch</span>}
+            {entry.season_number != null && entry.episode_number != null && (
+              <span className="text-muted-foreground text-xs border border-border bg-surface-hover rounded-full px-2 py-0.5">
+                S{entry.season_number} E{entry.episode_number}
+              </span>
+            )}
+            {entry.is_rewatch && <span className="text-muted-foreground text-xs border border-border rounded-full px-2 py-0.5">Rewatch</span>}
           </span>
         </div>
         

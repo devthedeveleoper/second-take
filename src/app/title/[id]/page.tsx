@@ -68,8 +68,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="flex flex-col animate-in fade-in duration-500 pb-16">
-      
-      {/* Cinematic Header */}
+
       <div className="relative w-full aspect-[21/9] md:aspect-[3/1] bg-surface-hover rounded-xl overflow-hidden mb-8 border border-border">
         {movie.backdrop_path ? (
           <>
@@ -80,7 +79,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
               className="object-cover opacity-60 mix-blend-overlay"
               priority
             />
-            {/* Gradient overlay for text readability */}
+
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           </>
         ) : (
@@ -91,8 +90,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 px-4 md:px-0 -mt-16 md:-mt-24 z-10">
-        
-        {/* Poster */}
+
         <div className="w-1/3 md:w-1/4 max-w-[200px] shrink-0">
           <div className="aspect-[2/3] relative rounded-lg overflow-hidden shadow-2xl border border-border bg-surface">
             {movie.poster_path ? (
@@ -112,7 +110,6 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* Info */}
         <div className="flex-1 flex flex-col justify-end pt-8 md:pt-16 gap-6">
           <div className="flex flex-col gap-2">
             <h1 className="text-4xl md:text-5xl font-serif font-medium leading-tight">
@@ -155,7 +152,6 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 
       <hr className="my-10 border-border" />
 
-      {/* Relationship Module */}
       <div className="bg-surface border border-border rounded-xl p-6 md:p-8 flex flex-col gap-6 shadow-sm">
         <div className="flex justify-between items-center">
           <h2 className="font-serif text-2xl">Your Cinema</h2>
@@ -175,8 +171,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           )}
         </div>
       </div>
-      
-      {/* Past Diary Entries */}
+
       {diaryEntries.length > 0 && (
         <div className="mt-8 flex flex-col gap-4">
           <h3 className="font-serif text-xl border-b border-border pb-2">Past Logs</h3>
@@ -188,7 +183,6 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
         </div>
       )}
 
-      {/* Synopsis & Cast */}
       <div className="mt-16 flex flex-col gap-8">
         <div>
           <h3 className="text-xl font-serif mb-4">Synopsis</h3>

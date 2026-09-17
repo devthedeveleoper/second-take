@@ -28,8 +28,7 @@ export default async function EpisodePage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="flex flex-col gap-12 py-8 animate-in fade-in duration-500 max-w-5xl mx-auto w-full px-4 md:px-0 pb-16">
-      
-      {/* Header */}
+
       <div className="flex flex-col md:flex-row gap-8 items-start">
         <div className="w-full md:w-1/2 aspect-video relative rounded-lg overflow-hidden shadow-xl border border-border bg-surface shrink-0">
           {episode.still_path ? (
@@ -82,7 +81,6 @@ export default async function EpisodePage({ params }: { params: Promise<{ id: st
 
       <hr className="border-border" />
 
-      {/* Relationship Module */}
       <div className="bg-surface border border-border rounded-xl p-6 md:p-8 flex flex-col gap-6 shadow-sm">
         <div className="flex justify-between items-center">
           <h2 className="font-serif text-2xl">Your Journal</h2>
@@ -97,8 +95,7 @@ export default async function EpisodePage({ params }: { params: Promise<{ id: st
           />
         </div>
       </div>
-      
-      {/* Past Diary Entries */}
+
       {diaryEntries.length > 0 && (
         <div className="mt-4 flex flex-col gap-4">
           <h3 className="font-serif text-xl border-b border-border pb-2">Past Logs</h3>

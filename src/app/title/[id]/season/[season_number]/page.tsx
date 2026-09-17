@@ -27,8 +27,7 @@ export default async function SeasonPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="flex flex-col gap-12 py-8 animate-in fade-in duration-500 max-w-5xl mx-auto w-full px-4 md:px-0 pb-16">
-      
-      {/* Header */}
+
       <div className="flex flex-col md:flex-row gap-8 items-start">
         <div className="w-1/3 md:w-1/4 max-w-[200px] shrink-0">
           <div className="aspect-[2/3] relative rounded-lg overflow-hidden shadow-xl border border-border bg-surface">
@@ -80,7 +79,6 @@ export default async function SeasonPage({ params }: { params: Promise<{ id: str
 
       <hr className="border-border" />
 
-      {/* Episodes List */}
       <div className="flex flex-col gap-6">
         <h2 className="text-2xl font-serif">Episodes</h2>
         

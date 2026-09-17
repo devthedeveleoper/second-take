@@ -6,6 +6,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import WatchlistRemoveButton from '@/components/WatchlistRemoveButton'
 
+import { hydrateMovies } from '@/utils/appwrite/hydration'
+
 export default async function WatchlistPage() {
   const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
   
@@ -24,10 +26,7 @@ export default async function WatchlistPage() {
     ])
     
     if (watchlistResult.total > 0) {
-      watchlistItems = watchlistResult.rows.map((item: any) => ({
-        ...item,
-        movie: item.movie || { title: 'Unknown Movie', poster_path: null }
-      }))
+      watchlistItems = await hydrateMovies(watchlistResult.rows)
     }
     
   } catch (err: any) {
@@ -60,7 +59,7 @@ export default async function WatchlistPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {watchlistItems.map((item) => (
-            <Link key={item.$id} href={`/title/${item.tmdb_id}`} className="group flex flex-col gap-3">
+            <Link key={item.$id} href={`/title/${item.movie.$id}`} className="group flex flex-col gap-3">
               <div className="aspect-[2/3] relative rounded-lg overflow-hidden bg-surface-hover border border-border shadow-sm">
                 {item.movie.poster_path ? (
                   <Image
@@ -75,9 +74,8 @@ export default async function WatchlistPage() {
                     No Poster
                   </div>
                 )}
-                
-                {/* Remove Button */}
-                <WatchlistRemoveButton tmdbId={item.tmdb_id} />
+
+                <WatchlistRemoveButton tmdbId={item.movie.$id} />
               </div>
               <div className="flex flex-col">
                 <h3 className="font-medium text-sm leading-tight group-hover:text-accent subtle-transition truncate">
