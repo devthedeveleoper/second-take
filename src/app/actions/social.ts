@@ -17,8 +17,8 @@ export async function followUser(followingId: string) {
     }
 
     await tables.createRow(DB_ID, 'follows', ID.unique(), {
-      follower_id: user.$id,
-      following_id: followingId,
+      follower: user.$id,
+      following: followingId,
       created_at: new Date().toISOString()
     })
 
@@ -39,8 +39,8 @@ export async function unfollowUser(followingId: string) {
     const user = await account.get()
 
     const result = await tables.listRows(DB_ID, 'follows', [
-      Query.equal('follower_id', user.$id),
-      Query.equal('following_id', followingId)
+      Query.equal('follower', user.$id),
+      Query.equal('following', followingId)
     ])
 
     if (result.total > 0) {
@@ -66,8 +66,8 @@ export async function checkFollowStatus(followingId: string) {
     if (user.$id === followingId) return { success: true, data: false }
 
     const result = await tables.listRows(DB_ID, 'follows', [
-      Query.equal('follower_id', user.$id),
-      Query.equal('following_id', followingId)
+      Query.equal('follower', user.$id),
+      Query.equal('following', followingId)
     ])
 
     return { success: true, data: result.total > 0 }
@@ -83,7 +83,7 @@ export async function getFeed(page = 1, limit = 20) {
     const user = await account.get()
 
     const follows = await tables.listRows(DB_ID, 'follows', [
-      Query.equal('follower_id', user.$id),
+      Query.equal('follower', user.$id),
       Query.limit(500)
     ])
 
@@ -91,7 +91,7 @@ export async function getFeed(page = 1, limit = 20) {
       return { success: true, data: [] }
     }
 
-    const followingIds = follows.rows.map((f: any) => f.following_id)
+    const followingIds = follows.rows.map((f: any) => f.following.$id)
 
     const chunks = []
     for (let i = 0; i < followingIds.length; i += 100) {
@@ -104,39 +104,12 @@ export async function getFeed(page = 1, limit = 20) {
     
     if (activeChunk.length > 0) {
       const logs = await tables.listRows(DB_ID, 'diary_entries', [
-        Query.equal('user_id', activeChunk),
+        Query.equal('profile', activeChunk),
         Query.orderDesc('watched_at'),
         Query.limit(limit),
         Query.offset((page - 1) * limit)
       ])
       allEntries = logs.rows
-    }
-
-    if (allEntries.length > 0) {
-      const uids = Array.from(new Set(allEntries.map(e => e.user_id)))
-      const profiles = await tables.listRows(DB_ID, 'profiles', [
-        Query.equal('user_id', uids)
-      ])
-      
-      const profileMap = profiles.rows.reduce((acc: any, p: any) => {
-        acc[p.user_id] = p
-        return acc
-      }, {})
-
-      const { getMovieDetails } = await import('@/utils/tmdb')
-
-      allEntries = await Promise.all(allEntries.map(async (entry) => {
-        let movie = null
-        try {
-          movie = await getMovieDetails(entry.tmdb_id)
-        } catch (e) {}
-
-        return {
-          ...entry,
-          profile: profileMap[entry.user_id] || { username: 'Unknown User' },
-          movie
-        }
-      }))
     }
 
     return { success: true, data: JSON.parse(JSON.stringify(allEntries)) }

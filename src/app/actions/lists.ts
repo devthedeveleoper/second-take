@@ -14,7 +14,7 @@ export async function createList(title: string, description: string = '', isPubl
     const user = await account.get()
 
     const list = await tables.createRow(DB_ID, 'custom_lists', ID.unique(), {
-      user_id: user.$id,
+      profile: user.$id,
       title,
       description,
       is_public: isPublic,
@@ -36,7 +36,7 @@ export async function getMyLists() {
     const user = await account.get()
 
     const result = await tables.listRows(DB_ID, 'custom_lists', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.orderDesc('created_at')
     ])
 
@@ -54,24 +54,18 @@ export async function getListDetails(listId: string) {
     const list = await tables.getRow(DB_ID, 'custom_lists', listId)
     
     const itemsResult = await tables.listRows(DB_ID, 'list_items', [
-      Query.equal('list_id', listId),
+      Query.equal('list', listId),
       Query.orderDesc('added_at')
     ])
 
-    const movies = await Promise.all(
-      itemsResult.rows.map(async (row: any) => {
-        try {
-          const tmdbData = await getMovieDetails(row.tmdb_id)
-          return {
-            ...tmdbData,
-            item_id: row.$id,
-            added_at: row.added_at
-          }
-        } catch (e) {
-          return null
-        }
-      })
-    )
+    const movies = itemsResult.rows.map((row: any) => {
+      if (!row.movie) return null
+      return {
+        ...row.movie,
+        item_id: row.$id,
+        added_at: row.added_at
+      }
+    })
 
     return { 
       success: true, 
@@ -94,8 +88,8 @@ export async function addToList(listId: string, tmdbId: number) {
     await account.get()
 
     await tables.createRow(DB_ID, 'list_items', ID.unique(), {
-      list_id: listId,
-      tmdb_id: tmdbId,
+      list: listId,
+      movie: tmdbId.toString(),
       added_at: new Date().toISOString()
     })
 
@@ -117,8 +111,8 @@ export async function removeFromList(listId: string, tmdbId: number) {
     await account.get()
 
     const result = await tables.listRows(DB_ID, 'list_items', [
-      Query.equal('list_id', listId),
-      Query.equal('tmdb_id', tmdbId)
+      Query.equal('list', listId),
+      Query.equal('movie', tmdbId.toString())
     ])
 
     if (result.total > 0) {
@@ -146,7 +140,7 @@ export async function deleteList(listId: string) {
     let hasMore = true
     while (hasMore) {
       const items = await tables.listRows(DB_ID, 'list_items', [
-        Query.equal('list_id', listId),
+        Query.equal('list', listId),
         Query.limit(100)
       ])
       
@@ -174,21 +168,21 @@ export async function getListsContainingMovie(tmdbId: number) {
     const user = await account.get()
 
     const userLists = await tables.listRows(DB_ID, 'custom_lists', [
-      Query.equal('user_id', user.$id)
+      Query.equal('profile', user.$id)
     ])
     
     if (userLists.total === 0) return { success: true, data: [] }
 
-    const listIds = userLists.rows.map(l => l.$id)
+    const listIds = userLists.rows.map((l: any) => l.$id)
 
     const items = await tables.listRows(DB_ID, 'list_items', [
-      Query.equal('tmdb_id', tmdbId),
+      Query.equal('movie', tmdbId.toString()),
       Query.limit(100)
     ])
 
     const activeListIds = items.rows
-      .filter((item: any) => listIds.includes(item.list_id))
-      .map((item: any) => item.list_id)
+      .filter((item: any) => listIds.includes(item.list.$id))
+      .map((item: any) => item.list.$id)
 
     return { success: true, data: activeListIds }
   } catch (error: any) {

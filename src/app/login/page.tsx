@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { Camera } from 'lucide-react'
-import { ID } from 'node-appwrite'
+import { ID, Query } from 'node-appwrite'
 
 export default async function LoginPage({
   searchParams,
@@ -42,6 +42,25 @@ export default async function LoginPage({
         expires: new Date(session.expire),
       })
 
+      // Ensure profile exists
+      try {
+        const { databases } = await createAdminClient()
+        const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
+        const existing = await databases.listRows(DB_ID, 'profiles', [
+          Query.equal('$id', session.userId)
+        ])
+        
+        if (existing.total === 0) {
+          await databases.createRow(DB_ID, 'profiles', session.userId, {
+            username: email.split('@')[0],
+            bio: '',
+            avatar_url: ''
+          })
+        }
+      } catch (profileErr) {
+        console.error('Error ensuring profile exists:', profileErr)
+      }
+
     } catch (error: any) {
       console.error('Login error:', error)
       redirect(`/login?error=${encodeURIComponent(error.message || 'Could not log in')}`)
@@ -71,6 +90,19 @@ export default async function LoginPage({
         secure: true,
         expires: new Date(session.expire),
       })
+
+      // Ensure profile exists
+      try {
+        const { databases } = await createAdminClient()
+        const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
+        await databases.createRow(DB_ID, 'profiles', session.userId, {
+          username: email.split('@')[0],
+          bio: '',
+          avatar_url: ''
+        })
+      } catch (profileErr) {
+        console.error('Error ensuring profile exists:', profileErr)
+      }
 
     } catch (error: any) {
       console.error('Signup error:', error)

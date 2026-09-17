@@ -13,15 +13,15 @@ export async function getProfile() {
     const { tables } = await createAdminClient()
     const user = await account.get()
 
-    const results = await tables.listRows(DB_ID, COLLECTION, [
-      Query.equal('user_id', user.$id)
-    ])
-
-    if (results.total > 0) {
-      return JSON.parse(JSON.stringify(results.rows[0]))
+    try {
+      const profile = await tables.listRows(DB_ID, COLLECTION, [Query.equal('$id', user.$id)])
+      if (profile.total > 0) {
+        return JSON.parse(JSON.stringify(profile.rows[0]))
+      }
+      return null
+    } catch {
+      return null
     }
-
-    return null
   } catch (error) {
     console.error('Error fetching profile:', error)
     return null
@@ -52,20 +52,20 @@ export async function updateProfile(formData: FormData) {
     }
 
     const profileData = {
-      user_id: user.$id,
       username: username || user.name || 'Cinephile',
       bio: bio || '',
       avatar_url: avatar_url
     }
 
-    const existing = await tables.listRows(DB_ID, COLLECTION, [
-      Query.equal('user_id', user.$id)
-    ])
-
-    if (existing.total > 0) {
-      await tables.updateRow(DB_ID, COLLECTION, existing.rows[0].$id, profileData)
-    } else {
-      await tables.createRow(DB_ID, COLLECTION, ID.unique(), profileData)
+    try {
+      const existing = await tables.listRows(DB_ID, COLLECTION, [Query.equal('$id', user.$id)])
+      if (existing.total > 0) {
+        await tables.updateRow(DB_ID, COLLECTION, user.$id, profileData)
+      } else {
+        await tables.createRow(DB_ID, COLLECTION, user.$id, profileData)
+      }
+    } catch (e: any) {
+      throw e
     }
 
     revalidatePath('/profile')
@@ -84,19 +84,16 @@ export async function getPublicProfile(username: string) {
       Query.equal('username', username)
     ])
 
-    if (result.total === 0) {
-      return { success: false, data: null }
-    }
-
+    if (result.total === 0) return { success: false, data: null }
     const profile = result.rows[0]
 
     const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
-      Query.equal('user_id', profile.user_id),
+      Query.equal('profile', profile.$id),
       Query.limit(5000)
     ])
 
     const entries = diaryResult.rows
-    const uniqueTitles = new Set(entries.map((e: any) => e.tmdb_id))
+    const uniqueTitles = new Set(entries.map((e: any) => e.movie ? e.movie.tmdb_id : e.tmdb_id))
     const episodes = entries.filter((e: any) => e.episode_number !== null)
 
     const stats = {
@@ -106,20 +103,10 @@ export async function getPublicProfile(username: string) {
     }
 
     const recentLogsRaw = entries.slice(0, 10)
-    const recentLogs = await Promise.all(
-      recentLogsRaw.map(async (entry: any) => {
-        try {
-          const { getMovieDetails } = await import('@/utils/tmdb')
-          const tmdbData = await getMovieDetails(entry.tmdb_id)
-          return {
-            ...entry,
-            movie: tmdbData
-          }
-        } catch (e) {
-          return entry
-        }
-      })
-    )
+    const recentLogs = recentLogsRaw.map((entry: any) => ({
+      ...entry,
+      movie: entry.movie // The movie is automatically populated by Appwrite relationships!
+    }))
 
     return { 
       success: true, 

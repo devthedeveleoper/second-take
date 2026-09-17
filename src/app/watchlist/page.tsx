@@ -19,28 +19,19 @@ export default async function WatchlistPage() {
     user = await account.get()
     
     const watchlistResult = await tables.listRows(DB_ID, 'watchlist', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.orderDesc('created_at')
     ])
     
     if (watchlistResult.total > 0) {
-      const tmdbIds = watchlistResult.rows.map((row: any) => row.tmdb_id)
-      
-      const cachedResult = await tables.listRows(DB_ID, 'cached_movies', [
-        Query.equal('tmdb_id', tmdbIds)
-      ])
-      
-      watchlistItems = watchlistResult.rows.map((item: any) => {
-        const movieData = cachedResult.rows.find((m: any) => m.tmdb_id === item.tmdb_id)
-        return {
-          ...item,
-          movie: movieData || { title: 'Unknown Movie', poster_path: null }
-        }
-      })
+      watchlistItems = watchlistResult.rows.map((item: any) => ({
+        ...item,
+        movie: item.movie || { title: 'Unknown Movie', poster_path: null }
+      }))
     }
     
   } catch (err: any) {
-    if (err.message === 'No session') {
+    if (err.code === 401 || err.message === 'No session') {
       errorMsg = 'Please log in to view your Watchlist.'
     } else {
       errorMsg = 'Failed to load watchlist.'

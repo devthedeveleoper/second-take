@@ -9,21 +9,19 @@ const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
 
 async function ensureMovieInCache(tables: any, tmdbId: number) {
   try {
-    const existing = await tables.listRows(DB_ID, 'cached_movies', [Query.equal('tmdb_id', tmdbId)])
-    if (existing.total > 0) return
+    const existing = await tables.getRow(DB_ID, 'cached_movies', tmdbId.toString())
+    if (existing) return
   } catch (err) {}
 
   const movie = await getMovieDetails(tmdbId)
   
   try {
-    await tables.createRow(DB_ID, 'cached_movies', ID.unique(), {
+    await tables.createRow(DB_ID, 'cached_movies', tmdbId.toString(), {
       tmdb_id: movie.id,
       title: movie.title,
       poster_path: movie.poster_path,
       release_year: movie.release_date ? movie.release_date.split('-')[0] : null
-    }, [
-      Permission.read(Role.users())
-    ])
+    })
   } catch (err: any) {
     if (err.code !== 409) console.error('Error caching movie:', err)
   }
@@ -38,14 +36,10 @@ export async function addToWatchlist(tmdbId: number) {
     await ensureMovieInCache(tables, tmdbId)
 
     await tables.createRow(DB_ID, 'watchlist', ID.unique(), {
-      user_id: user.$id,
-      tmdb_id: tmdbId,
+      profile: user.$id,
+      movie: tmdbId.toString(),
       created_at: new Date().toISOString()
-    }, [
-      Permission.read(Role.user(user.$id)),
-      Permission.update(Role.user(user.$id)),
-      Permission.delete(Role.user(user.$id))
-    ])
+    })
 
     revalidatePath(`/title/${tmdbId}`)
     revalidatePath('/watchlist')
@@ -64,8 +58,8 @@ export async function removeFromWatchlist(tmdbId: number) {
     const user = await account.get()
 
     const result = await tables.listRows(DB_ID, 'watchlist', [
-        Query.equal('user_id', user.$id),
-        Query.equal('tmdb_id', tmdbId)
+        Query.equal('profile', user.$id),
+        Query.equal('movie', tmdbId.toString())
     ])
     
     if (result.total > 0) {
@@ -88,8 +82,8 @@ export async function checkWatchlist(tmdbId: number): Promise<boolean> {
     const user = await account.get()
 
     const result = await tables.listRows(DB_ID, 'watchlist', [
-        Query.equal('user_id', user.$id),
-        Query.equal('tmdb_id', tmdbId)
+        Query.equal('profile', user.$id),
+        Query.equal('movie', tmdbId.toString())
     ])
     
     return result.total > 0

@@ -23,10 +23,10 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   try {
     const { account } = await createSessionClient()
     const currentUser = await account.get()
-    isSelf = currentUser.$id === profile.user_id
+    isSelf = currentUser.$id === profile.$id
     
     if (!isSelf) {
-      const followRes = await checkFollowStatus(profile.user_id)
+      const followRes = await checkFollowStatus(profile.$id)
       isFollowing = followRes.success ? followRes.data : false
     }
   } catch (e) {
@@ -68,7 +68,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
         <div className="shrink-0 w-full md:w-auto">
           <FollowButton 
-            followingId={profile.user_id} 
+            followingId={profile.$id} 
             initialStatus={isFollowing} 
             isSelf={isSelf} 
           />

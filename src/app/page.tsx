@@ -22,45 +22,31 @@ export default async function Home() {
     user = await account.get()
 
     const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.orderDesc('watched_at'),
       Query.limit(4)
     ])
     totalDiary = diaryResult.total
 
     const watchlistResult = await tables.listRows(DB_ID, 'watchlist', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.orderDesc('created_at'),
-      Query.limit(4)
+      Query.limit(6)
     ])
     totalWatchlist = watchlistResult.total
 
-    const tmdbIds = [
-      ...diaryResult.rows.map((r: any) => r.tmdb_id),
-      ...watchlistResult.rows.map((r: any) => r.tmdb_id)
-    ]
-    const uniqueIds = Array.from(new Set(tmdbIds))
+    recentDiary = diaryResult.rows.map((entry: any) => ({
+      ...entry, 
+      movie: entry.movie || { title: 'Unknown', poster_path: null }
+    }))
 
-    let cachedMovies: any[] = []
-    if (uniqueIds.length > 0) {
-      const cachedResult = await tables.listRows(DB_ID, 'cached_movies', [
-        Query.equal('tmdb_id', uniqueIds)
-      ])
-      cachedMovies = cachedResult.rows
-    }
-
-    recentDiary = diaryResult.rows.map((entry: any) => {
-      const m = cachedMovies.find((m: any) => m.tmdb_id === entry.tmdb_id)
-      return { ...entry, movie: m || { title: 'Unknown', poster_path: null } }
-    })
-
-    recentWatchlist = watchlistResult.rows.map((entry: any) => {
-      const m = cachedMovies.find((m: any) => m.tmdb_id === entry.tmdb_id)
-      return { ...entry, movie: m || { title: 'Unknown', poster_path: null } }
-    })
+    recentWatchlist = watchlistResult.rows.map((entry: any) => ({
+      ...entry, 
+      movie: entry.movie || { title: 'Unknown', poster_path: null }
+    }))
 
   } catch (err: any) {
-    if (err.message === 'No session') {
+    if (err.code === 401 || err.message === 'No session') {
       return (
         <div className="relative -mx-4 md:-mx-8 -mt-8 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] overflow-hidden">
           {/* Cinematic Background */}

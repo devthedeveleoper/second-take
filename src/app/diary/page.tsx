@@ -19,28 +19,19 @@ export default async function DiaryPage() {
     user = await account.get()
     
     const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.orderDesc('watched_at')
     ])
     
     if (diaryResult.total > 0) {
-      const tmdbIds = diaryResult.rows.map((row: any) => row.tmdb_id)
-      
-      const cachedResult = await tables.listRows(DB_ID, 'cached_movies', [
-        Query.equal('tmdb_id', tmdbIds)
-      ])
-      
-      diaryEntries = diaryResult.rows.map((entry: any) => {
-        const movieData = cachedResult.rows.find((m: any) => m.tmdb_id === entry.tmdb_id)
-        return {
-          ...entry,
-          movie: movieData || { title: 'Unknown Movie', poster_path: null, release_year: '' }
-        }
-      })
+      diaryEntries = diaryResult.rows.map((entry: any) => ({
+        ...entry,
+        movie: entry.movie || { title: 'Unknown Movie', poster_path: null, release_year: '' }
+      }))
     }
     
   } catch (err: any) {
-    if (err.message === 'No session') {
+    if (err.code === 401 || err.message === 'No session') {
       errorMsg = 'Please log in to view your Diary.'
     } else {
       errorMsg = 'Failed to load diary.'

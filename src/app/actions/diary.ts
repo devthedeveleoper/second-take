@@ -9,21 +9,19 @@ const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
 
 async function ensureMovieInCache(tables: any, tmdbId: number) {
   try {
-    const existing = await tables.listRows(DB_ID, 'cached_movies', [Query.equal('tmdb_id', tmdbId)])
-    if (existing.total > 0) return
+    const existing = await tables.getRow(DB_ID, 'cached_movies', tmdbId.toString())
+    if (existing) return
   } catch (err) {}
 
   const movie = await getMovieDetails(tmdbId)
   
   try {
-    await tables.createRow(DB_ID, 'cached_movies', ID.unique(), {
+    await tables.createRow(DB_ID, 'cached_movies', tmdbId.toString(), {
       tmdb_id: movie.id,
       title: movie.title,
       poster_path: movie.poster_path,
       release_year: movie.release_date ? movie.release_date.split('-')[0] : null
-    }, [
-      Permission.read(Role.users())
-    ])
+    })
   } catch (err: any) {
     if (err.code !== 409) console.error('Error caching movie:', err)
   }
@@ -52,8 +50,8 @@ export async function logFilm(formData: FormData) {
     await ensureMovieInCache(tables, tmdbId)
 
     const documentData: any = {
-      user_id: user.$id,
-      tmdb_id: tmdbId,
+      profile: user.$id,
+      movie: tmdbId.toString(),
       watched_at: watchedAt,
       rating: rating,
       thought: thought,
@@ -67,16 +65,12 @@ export async function logFilm(formData: FormData) {
 
     const collectionName = episodeNumber !== null ? 'episode_entries' : 'diary_entries'
 
-    await tables.createRow(DB_ID, collectionName, ID.unique(), documentData, [
-      Permission.read(Role.user(user.$id)),
-      Permission.update(Role.user(user.$id)),
-      Permission.delete(Role.user(user.$id))
-    ])
+    await tables.createRow(DB_ID, collectionName, ID.unique(), documentData)
 
     try {
       const wResult = await tables.listRows(DB_ID, 'watchlist', [
-        Query.equal('user_id', user.$id),
-        Query.equal('tmdb_id', tmdbId)
+        Query.equal('profile', user.$id),
+        Query.equal('movie', tmdbId.toString())
       ])
       if (wResult.total > 0) {
         await tables.deleteRow(DB_ID, 'watchlist', wResult.rows[0].$id)
@@ -103,8 +97,8 @@ export async function getMovieDiaryEntries(tmdbId: number, seasonNumber?: number
     const user = await account.get()
 
     const queries = [
-      Query.equal('user_id', user.$id),
-      Query.equal('tmdb_id', tmdbId),
+      Query.equal('profile', user.$id),
+      Query.equal('movie', tmdbId.toString()),
       Query.orderDesc('watched_at')
     ]
 
@@ -136,8 +130,8 @@ export async function getSeasonDiaryEntries(tmdbId: number, seasonNumber: number
     const user = await account.get()
 
     const result = await tables.listRows(DB_ID, 'episode_entries', [
-      Query.equal('user_id', user.$id),
-      Query.equal('tmdb_id', tmdbId),
+      Query.equal('profile', user.$id),
+      Query.equal('movie', tmdbId.toString()),
       Query.equal('season_number', seasonNumber),
       Query.isNotNull('episode_number')
     ])
@@ -155,12 +149,9 @@ export async function updateDiaryEntry(entryId: string, formData: FormData, isEp
     const user = await account.get()
 
     const collectionName = isEpisode ? 'episode_entries' : 'diary_entries'
-    const entryResult = await tables.listRows(DB_ID, collectionName, [
-      Query.equal('$id', entryId)
-    ])
-    if (entryResult.total === 0) throw new Error('Entry not found')
-    const entry = entryResult.rows[0]
-    if (entry.user_id !== user.$id) throw new Error('Unauthorized')
+    const entry = await tables.getRow(DB_ID, collectionName, entryId)
+    if (!entry) throw new Error('Entry not found')
+    if (entry.profile.$id !== user.$id) throw new Error('Unauthorized')
 
     const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null
     const thought = formData.get('thought') as string
@@ -199,12 +190,9 @@ export async function deleteDiaryEntry(entryId: string, tmdbId: number, isEpisod
     const user = await account.get()
 
     const collectionName = isEpisode ? 'episode_entries' : 'diary_entries'
-    const entryResult = await tables.listRows(DB_ID, collectionName, [
-      Query.equal('$id', entryId)
-    ])
-    if (entryResult.total === 0) throw new Error('Entry not found')
-    const entry = entryResult.rows[0]
-    if (entry.user_id !== user.$id) throw new Error('Unauthorized')
+    const entry = await tables.getRow(DB_ID, collectionName, entryId)
+    if (!entry) throw new Error('Entry not found')
+    if (entry.profile.$id !== user.$id) throw new Error('Unauthorized')
 
     await tables.deleteRow(DB_ID, collectionName, entryId)
 
@@ -228,18 +216,18 @@ export async function getDiaryStats() {
     const user = await account.get()
 
     const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.limit(5000)
     ])
 
     const episodeResult = await tables.listRows(DB_ID, 'episode_entries', [
-      Query.equal('user_id', user.$id),
+      Query.equal('profile', user.$id),
       Query.limit(5000)
     ])
 
     const entries = [...diaryResult.rows, ...episodeResult.rows]
     
-    const uniqueTitles = new Set(entries.map((e: any) => e.tmdb_id))
+    const uniqueTitles = new Set(entries.map((e: any) => e.movie ? e.movie.tmdb_id : e.tmdb_id))
     
     const episodes = entries.filter((e: any) => e.episode_number !== null)
 
