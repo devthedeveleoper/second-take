@@ -50,10 +50,11 @@ export default async function LoginPage({
         ])
         
         if (existing.total === 0) {
+          const defaultUsername = email.split('@')[0]
           await tables.createRow(DB_ID, 'profiles', session.userId, {
-            username: email.split('@')[0],
+            username: defaultUsername,
             bio: '',
-            avatar_url: ''
+            avatar_url: `https://ui-avatars.com/api/?name=${defaultUsername}&background=random`
           })
         }
       } catch (profileErr) {
@@ -93,10 +94,11 @@ export default async function LoginPage({
       try {
         const { tables } = await createAdminClient()
         const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
+        const defaultUsername = email.split('@')[0]
         await tables.createRow(DB_ID, 'profiles', session.userId, {
-          username: email.split('@')[0],
+          username: defaultUsername,
           bio: '',
-          avatar_url: ''
+          avatar_url: `https://ui-avatars.com/api/?name=${defaultUsername}&background=random`
         })
       } catch (profileErr) {
         console.error('Error ensuring profile exists:', profileErr)

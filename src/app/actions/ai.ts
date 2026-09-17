@@ -13,9 +13,9 @@ const ai = new GoogleGenAI({
 
 export async function generateRoast(username?: string) {
   if (!process.env.GEMINI_API_KEY) {
-    return { 
-      success: false, 
-      error: 'GEMINI_API_KEY is not configured in .env.local' 
+    return {
+      success: false,
+      error: 'GEMINI_API_KEY is not configured in .env.local'
     }
   }
 
@@ -32,9 +32,9 @@ export async function generateRoast(username?: string) {
       const { account } = await createSessionClient()
       const { tables } = await createAdminClient()
       const user = await account.get()
-      
+
       const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
-      
+
       const diaryResult = await tables.listRows(DB_ID, 'diary_entries', [
         Query.equal('profile', user.$id),
         Query.limit(10),
@@ -44,9 +44,9 @@ export async function generateRoast(username?: string) {
     }
 
     if (recentLogs.length < 3) {
-      return { 
-        success: false, 
-        error: 'You need to log at least 3 movies before I can accurately roast your taste.' 
+      return {
+        success: false,
+        error: 'You need to log at least 3 movies before I can accurately roast your taste.'
       }
     }
 
@@ -59,26 +59,29 @@ export async function generateRoast(username?: string) {
       return `- ${title} (${log.rating ? log.rating + '/5 stars' : 'No rating'})`
     }).join('\n')
 
-    const prompt = `
-You are a ruthless, cynical, and extremely witty film critic. 
-Your job is to roast a user's movie watching habits based on their 10 most recent logs.
-Be creative, savage, yet undeniably funny. Format your response in clean markdown. 
+    const { functions } = await createAdminClient()
+    const watchHistoryString = watchHistory
 
-Rules:
-1. Don't hold back, but keep it PG-13 (funny insults about their taste, no actual hate speech).
-2. Point out embarrassing patterns (e.g. rating bad movies highly, only watching superhero movies, etc).
-3. End with a sarcastic recommendation of what they should watch next.
-
-Here is their recent watch history:
-${watchHistory}
-`
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
+    const execution = await functions.createExecution({
+      functionId: '6aaba708001f9e4b2d5a',
+      body: watchHistoryString,
+      async: false // async: false so it waits for the result
     })
 
-    const roastText = response.text || "I'm speechless. Your taste is so bad it broke my language model."
+    let roastText = "I'm speechless. Your taste is so bad it broke my language model."
+
+    if (execution.status === 'completed') {
+      try {
+        const result = JSON.parse(execution.responseBody)
+        if (result.success && result.data) {
+          roastText = result.data
+        }
+      } catch (e) {
+        console.error('Failed to parse function response:', execution.responseBody)
+      }
+    } else {
+      console.error('Appwrite function failed:', execution.errors)
+    }
 
     return { success: true, data: roastText }
   } catch (error: any) {

@@ -1,4 +1,4 @@
-import { Client, Account, Databases, TablesDB, Storage } from 'node-appwrite';
+import { Client, Account, Databases, TablesDB, Storage, Functions } from 'node-appwrite';
 import { cookies } from 'next/headers';
 
 export async function createSessionClient() {
@@ -27,6 +27,9 @@ export async function createSessionClient() {
     },
     get storage() {
         return new Storage(client);
+    },
+    get functions() {
+        return new Functions(client);
     }
   };
 }
@@ -46,6 +49,9 @@ export async function createAdminClient() {
     },
     get tables() {
         return new TablesDB(client);
+    },
+    get functions() {
+        return new Functions(client);
     }
   };
 }

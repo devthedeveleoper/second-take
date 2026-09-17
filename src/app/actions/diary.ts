@@ -11,10 +11,10 @@ async function ensureMovieInCache(tables: any, tmdbId: number) {
   try {
     const existing = await tables.getRow(DB_ID, 'cached_movies', tmdbId.toString())
     if (existing) return
-  } catch (err) {}
+  } catch (err) { }
 
   const movie = await getMovieDetails(tmdbId)
-  
+
   try {
     await tables.createRow(DB_ID, 'cached_movies', tmdbId.toString(), {
       tmdb_id: movie.id,
@@ -39,12 +39,12 @@ export async function logFilm(formData: FormData) {
     const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null
     const thought = formData.get('thought') as string
     const watchedAtStr = formData.get('watchedAt') as string
-    
+
     let watchedAt = new Date().toISOString()
     if (watchedAtStr) {
       watchedAt = new Date(watchedAtStr).toISOString()
     }
-    
+
     const isRewatch = formData.get('isRewatch') === 'on'
 
     await ensureMovieInCache(tables, tmdbId)
@@ -75,7 +75,7 @@ export async function logFilm(formData: FormData) {
       if (wResult.total > 0) {
         await tables.deleteRow(DB_ID, 'watchlist', wResult.rows[0].$id)
       }
-    } catch (e) {}
+    } catch (e) { }
 
     revalidatePath(`/title/${tmdbId}`)
     if (seasonNumber !== null) {
@@ -117,8 +117,8 @@ export async function getMovieDiaryEntries(tmdbId: number, seasonNumber?: number
         tables.listRows(DB_ID, 'diary_entries', queries),
         tables.listRows(DB_ID, 'episode_entries', queries)
       ])
-      
-      const combined = [...diaryResult.rows, ...episodeResult.rows].sort((a, b) => 
+
+      const combined = [...diaryResult.rows, ...episodeResult.rows].sort((a, b) =>
         new Date(b.watched_at).getTime() - new Date(a.watched_at).getTime()
       )
       return JSON.parse(JSON.stringify(combined))
@@ -145,7 +145,7 @@ export async function getSeasonDiaryEntries(tmdbId: number, seasonNumber: number
       Query.equal('season_number', seasonNumber),
       Query.isNotNull('episode_number')
     ])
-    
+
     return JSON.parse(JSON.stringify(result.rows))
   } catch (error) {
     return []
@@ -167,12 +167,12 @@ export async function updateDiaryEntry(entryId: string, formData: FormData, isEp
     const thought = formData.get('thought') as string
     const watchedAtStr = formData.get('watchedAt') as string
     const tmdbId = parseInt(formData.get('tmdbId') as string)
-    
+
     let watchedAt = entry.watched_at
     if (watchedAtStr) {
       watchedAt = new Date(watchedAtStr).toISOString()
     }
-    
+
     const isRewatch = formData.get('isRewatch') === 'on'
 
     await tables.updateRow(DB_ID, collectionName, entryId, {
@@ -237,10 +237,9 @@ export async function getDiaryStats() {
     ])
 
     const entries = [...diaryResult.rows, ...episodeResult.rows]
-    console.log('GET DIARY STATS - ENTRIES COUNT:', entries.length);
-    
+
     const uniqueTitles = new Set(entries.map((e: any) => e.movie ? e.movie.tmdb_id : e.tmdb_id))
-    
+
     const episodes = entries.filter((e: any) => e.episode_number !== null)
 
     const ratingsMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
@@ -251,7 +250,7 @@ export async function getDiaryStats() {
     })
 
     const activityMap: Record<string, number> = {}
-    
+
     const now = new Date()
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
