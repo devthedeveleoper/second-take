@@ -43,14 +43,14 @@ export default async function LoginPage({
       })
 
       try {
-        const { databases } = await createAdminClient()
+        const { tables } = await createAdminClient()
         const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
-        const existing = await databases.listRows(DB_ID, 'profiles', [
+        const existing = await tables.listRows(DB_ID, 'profiles', [
           Query.equal('$id', session.userId)
         ])
         
         if (existing.total === 0) {
-          await databases.createRow(DB_ID, 'profiles', session.userId, {
+          await tables.createRow(DB_ID, 'profiles', session.userId, {
             username: email.split('@')[0],
             bio: '',
             avatar_url: ''
@@ -91,9 +91,9 @@ export default async function LoginPage({
       })
 
       try {
-        const { databases } = await createAdminClient()
+        const { tables } = await createAdminClient()
         const DB_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!
-        await databases.createRow(DB_ID, 'profiles', session.userId, {
+        await tables.createRow(DB_ID, 'profiles', session.userId, {
           username: email.split('@')[0],
           bio: '',
           avatar_url: ''

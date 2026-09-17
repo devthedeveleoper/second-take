@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { User as UserIcon, Film, Tv, BookHeart } from 'lucide-react'
 import DiaryEntryCard from '@/components/DiaryEntryCard'
 import FollowButton from '@/components/FollowButton'
+import RoastModal from '@/components/RoastModal'
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
@@ -65,7 +66,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <div className="shrink-0 w-full md:w-auto">
+        <div className="shrink-0 w-full md:w-auto flex items-center gap-3">
+          <RoastModal username={username} />
           <FollowButton 
             followingId={profile.$id} 
             initialStatus={isFollowing} 

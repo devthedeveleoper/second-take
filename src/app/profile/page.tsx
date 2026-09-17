@@ -7,6 +7,7 @@ import { getProfile } from '@/app/actions/profile'
 import { getDiaryStats } from '@/app/actions/diary'
 import EditProfileForm from '@/components/EditProfileForm'
 import ProfileCharts from '@/components/ProfileCharts'
+import RoastModal from '@/components/RoastModal'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -69,7 +70,8 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <div className="shrink-0 w-full md:w-auto">
+        <div className="shrink-0 w-full md:w-auto flex items-center gap-3">
+          <RoastModal username={profile?.username} />
           <form action={logout}>
             <button className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-2 border border-red-500/20 text-red-500 hover:bg-red-500/10 rounded-lg subtle-transition font-medium text-sm">
               <LogOut className="w-4 h-4" />
