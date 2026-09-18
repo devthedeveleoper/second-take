@@ -92,7 +92,7 @@ export async function getFeed(page = 1, limit = 20) {
       return { success: true, data: [] }
     }
 
-    const followingIds = follows.rows.map((f: any) => f.following.$id)
+    const followingIds = follows.rows.map((f: any) => typeof f.following === 'object' ? f.following.$id : f.following)
 
     const chunks = []
     for (let i = 0; i < followingIds.length; i += 100) {
@@ -120,3 +120,50 @@ export async function getFeed(page = 1, limit = 20) {
     return { success: false, data: [] }
   }
 }
+
+export async function getSuggestedUsers() {
+  try {
+    const { account } = await createSessionClient()
+    const { tables } = await createAdminClient()
+    
+    // We can safely assume the user is logged in if they are on the feed
+    let currentUserId = null
+    try {
+      const user = await account.get()
+      currentUserId = user.$id
+    } catch (e) {
+      // If not logged in, we can still fetch suggestions for public view if needed
+    }
+
+    let followingIds: string[] = []
+    
+    if (currentUserId) {
+      const follows = await tables.listRows(DB_ID, 'follows', [
+        Query.equal('follower', currentUserId),
+        Query.limit(500)
+      ])
+      followingIds = follows.rows.map((f: any) => typeof f.following === 'object' ? f.following.$id : f.following)
+    }
+
+    // Get up to 10 latest registered profiles
+    const profilesResult = await tables.listRows(DB_ID, 'profiles', [
+      Query.orderDesc('$createdAt'),
+      Query.limit(20)
+    ])
+
+    // Filter out self and already following
+    const followingSet = new Set(followingIds)
+    let suggestions = profilesResult.rows.filter((p: any) => 
+      p.$id !== currentUserId && !followingSet.has(p.$id)
+    )
+
+    // Take top 5
+    suggestions = suggestions.slice(0, 5)
+
+    return { success: true, data: JSON.parse(JSON.stringify(suggestions)) }
+  } catch (error: any) {
+    console.error('Error fetching suggested users:', error)
+    return { success: false, data: [] }
+  }
+}
+

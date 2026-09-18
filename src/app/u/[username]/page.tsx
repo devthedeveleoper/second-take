@@ -49,6 +49,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                 fill 
                 className="object-cover"
                 sizes="128px"
+                unoptimized
               />
             ) : (
               <UserIcon className="w-12 h-12 text-muted-foreground" />

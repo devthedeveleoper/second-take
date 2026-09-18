@@ -31,6 +31,12 @@ const nextConfig: NextConfig = {
         hostname: 'fra.cloud.appwrite.io',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

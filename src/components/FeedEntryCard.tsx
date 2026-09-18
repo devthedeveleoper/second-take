@@ -33,7 +33,7 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
           <Link href={`/u/${profile.username}`} className="flex items-center gap-2 hover:text-foreground subtle-transition group">
             <div className="w-5 h-5 rounded-full overflow-hidden relative bg-background border border-border">
               {profile.avatar_url ? (
-                <Image src={profile.avatar_url} alt={profile.username} fill className="object-cover" />
+                <Image src={profile.avatar_url} alt={profile.username} fill className="object-cover" unoptimized />
               ) : (
                 <UserIcon className="w-full h-full p-0.5 text-muted-foreground" />
               )}
