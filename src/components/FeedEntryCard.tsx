@@ -11,7 +11,7 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
   return (
     <div className="flex flex-col md:flex-row gap-4 p-4 border border-border rounded-xl bg-surface hover:bg-surface-hover subtle-transition animate-in fade-in zoom-in-95 duration-200">
 
-      <Link href={`/title/${movie.id}`} className="shrink-0 relative w-24 md:w-32 aspect-[2/3] rounded-md overflow-hidden bg-background">
+      <Link href={`/title/${movie.tmdb_id || movie.$id || movie.id}`} className="shrink-0 relative w-24 md:w-32 aspect-[2/3] rounded-md overflow-hidden bg-background">
         {movie.poster_path ? (
           <Image
             src={getImageUrl(movie.poster_path, 'w342') || ''}
@@ -56,7 +56,7 @@ export default function FeedEntryCard({ entry }: { entry: any }) {
         </div>
 
         <div className="flex flex-col gap-0.5 mt-1">
-          <Link href={`/title/${movie.id}`}>
+          <Link href={`/title/${movie.tmdb_id || movie.$id || movie.id}`}>
             <h3 className="font-serif text-lg font-medium hover:text-accent subtle-transition leading-tight">
               {movie.title} <span className="text-muted-foreground text-sm font-sans font-normal ml-1">{movie.release_date?.split('-')[0]}</span>
             </h3>
